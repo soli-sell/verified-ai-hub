@@ -10,3 +10,4 @@ lib/.env.local
 .next
 node_modules
 .next
+.env*
