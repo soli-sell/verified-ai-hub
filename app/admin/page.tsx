@@ -194,7 +194,7 @@ export default function AdminPage() {
             <label className="text-xs text-slate-400 block mb-1">Website URL</label>
             <input
               required
-              type="url"
+              type="text"
               placeholder="https://..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
