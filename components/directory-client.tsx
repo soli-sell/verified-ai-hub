@@ -27,12 +27,13 @@ export interface DirectoryClientProps {
 }
 
 export function DirectoryClient({ initialTools }: DirectoryClientProps) {
-  const [tools, setTools] = useState<AITool[]>([]);
+  const [tools, setTools] = useState<AITool[]>(initialTools || []);
   const [search, setSearch] = useState('');
   const [selectedSector, setSelectedSector] = useState('All');
 
   const sectors = ['All', 'Developer Tools', 'Healthcare', 'Life Sciences', 'Finance', 'Legal', 'Education', 'Marketing'];
 
+  // Normalizes URLs so they always open correctly in a new tab
   const formatUrl = (rawUrl: string) => {
     if (!rawUrl) return '#';
     let url = rawUrl.trim();
@@ -40,14 +41,6 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
       url = `https://${url}`;
     }
     return url;
-  };
-
-  const handleVisitSite = (e: React.MouseEvent, url: string) => {
-    e.stopPropagation(); // Stop event propagation to parent containers
-    const formatted = formatUrl(url);
-    if (formatted && formatted !== '#') {
-      window.open(formatted, '_blank', 'noopener,noreferrer');
-    }
   };
 
   useEffect(() => {
@@ -64,31 +57,40 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
         const mapped = data.map((tool: any) => ({
           id: String(tool.id),
           name: tool.name,
-          slug: tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          website_url: formatUrl(tool.url),
+          slug: tool.name ? tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '',
+          website_url: formatUrl(tool.url || tool.website_url),
           tagline: '',
           description: tool.description,
-          sector: tool.category,
-          pricing_model: tool.pricing,
+          sector: tool.category || tool.sector,
+          pricing_model: tool.pricing || tool.pricing_model,
           fda_cleared: false,
           hipaa_compliant: false,
           soc2_compliant: false,
           target_audience: 'General Users',
         }));
         setTools(mapped);
-      } else if (initialTools) {
-        setTools(initialTools.map(t => ({ ...t, website_url: formatUrl(t.website_url) })));
       }
     }
 
     fetchLiveTools();
-  }, [selectedSector, initialTools]);
+  }, [selectedSector]);
+
+  useEffect(() => {
+    if (initialTools && initialTools.length > 0) {
+      setTools(
+        initialTools.map((t) => ({
+          ...t,
+          website_url: formatUrl(t.website_url),
+        }))
+      );
+    }
+  }, [initialTools]);
 
   const filteredTools = tools.filter((tool) => {
     const query = search.toLowerCase();
     const matchesSearch =
-      tool.name.toLowerCase().includes(query) ||
-      tool.description.toLowerCase().includes(query);
+      (tool.name && tool.name.toLowerCase().includes(query)) ||
+      (tool.description && tool.description.toLowerCase().includes(query));
     const matchesSector =
       selectedSector === 'All' || tool.sector === selectedSector;
     return matchesSearch && matchesSector;
@@ -142,13 +144,16 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
                       {tool.name}
                     </h3>
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => handleVisitSite(e, tool.website_url)}
-                    className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white transition-colors cursor-pointer relative z-10"
+
+                  {/* Bright Blue Visit Site Button */}
+                  <a
+                    href={tool.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition-all cursor-pointer shrink-0"
                   >
                     Visit Site ↗
-                  </button>
+                  </a>
                 </div>
 
                 <p className="text-sm text-slate-300 leading-relaxed">
@@ -157,7 +162,7 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
               </div>
 
               <div className="pt-4 border-t border-slate-800/80 flex flex-wrap gap-2 items-center text-xs">
-                <span className="text-xs text-slate-400 border border-slate-700 px-2 py-0.5 rounded font-medium">
+                <span className="text-xs text-slate-400 border border-slate-700 px-2.5 py-1 rounded-lg font-medium">
                   {tool.pricing_model}
                 </span>
               </div>
