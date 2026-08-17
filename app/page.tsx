@@ -6,7 +6,7 @@ const supabaseUrl = 'https://knsajxxoarmskzxeatyr.supabase.co';
 const supabaseAnonKey = 'sb_publishable_I40WNHiyfcV8tHG0HLGHwA_ad0PAvmS';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const revalidate = 0; // Ensures new tools show up immediately upon refresh
+export const revalidate = 0; // Live updates on refresh
 
 async function getTools(): Promise<AITool[]> {
   try {
@@ -20,21 +20,28 @@ async function getTools(): Promise<AITool[]> {
       return [];
     }
 
-    // Map database columns to the expected AITool shape
-    return data.map((tool: any) => ({
-      id: String(tool.id),
-      name: tool.name,
-      slug: tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      website_url: tool.url,
-      tagline: tool.description,
-      description: tool.description,
-      sector: tool.category,
-      pricing_model: tool.pricing,
-      fda_cleared: false,
-      hipaa_compliant: false,
-      soc2_compliant: false,
-      target_audience: 'General Users',
-    })) as AITool[];
+    return data.map((tool: any) => {
+      // Ensure URL always starts with http:// or https://
+      let formattedUrl = (tool.url || '').trim();
+      if (formattedUrl && !formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = `https://${formattedUrl}`;
+      }
+
+      return {
+        id: String(tool.id),
+        name: tool.name,
+        slug: tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        website_url: formattedUrl,
+        tagline: tool.description,
+        description: tool.description,
+        sector: tool.category,
+        pricing_model: tool.pricing,
+        fda_cleared: false,
+        hipaa_compliant: false,
+        soc2_compliant: false,
+        target_audience: 'General Users',
+      };
+    }) as AITool[];
   } catch (err) {
     console.error('Failed to query tools:', err);
     return [];
@@ -86,7 +93,7 @@ export default async function HomePage(): Promise<JSX.Element> {
             </span>
           </h1>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Discover and explore verified AI tools added across all industry sectors.
+            Discover and explore verified AI tools across all industry sectors.
           </p>
         </div>
       </section>
