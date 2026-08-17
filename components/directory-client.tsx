@@ -27,11 +27,21 @@ export interface DirectoryClientProps {
 }
 
 export function DirectoryClient({ initialTools }: DirectoryClientProps) {
-  const [tools, setTools] = useState<AITool[]>(initialTools);
+  const [tools, setTools] = useState<AITool[]>([]);
   const [search, setSearch] = useState('');
   const [selectedSector, setSelectedSector] = useState('All');
 
   const sectors = ['All', 'Developer Tools', 'Healthcare', 'Life Sciences', 'Finance', 'Legal', 'Education', 'Marketing'];
+
+  // Safe helper to force valid absolute URLs
+  const formatUrl = (rawUrl: string) => {
+    if (!rawUrl) return '#';
+    let url = rawUrl.trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://${url}`;
+    }
+    return url;
+  };
 
   useEffect(() => {
     async function fetchLiveTools() {
@@ -44,38 +54,28 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
       const { data, error } = await query;
 
       if (!error && data) {
-        const mappedTools = data.map((tool: any) => {
-          let formattedUrl = (tool.url || '').trim();
-          if (formattedUrl && !formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
-            formattedUrl = `https://${formattedUrl}`;
-          }
-
-          return {
-            id: String(tool.id),
-            name: tool.name,
-            slug: tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            website_url: formattedUrl,
-            tagline: '',
-            description: tool.description,
-            sector: tool.category,
-            pricing_model: tool.pricing,
-            fda_cleared: false,
-            hipaa_compliant: false,
-            soc2_compliant: false,
-            target_audience: 'General Users',
-          };
-        });
-        setTools(mappedTools);
+        const mapped = data.map((tool: any) => ({
+          id: String(tool.id),
+          name: tool.name,
+          slug: tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          website_url: formatUrl(tool.url),
+          tagline: '',
+          description: tool.description,
+          sector: tool.category,
+          pricing_model: tool.pricing,
+          fda_cleared: false,
+          hipaa_compliant: false,
+          soc2_compliant: false,
+          target_audience: 'General Users',
+        }));
+        setTools(mapped);
+      } else if (initialTools) {
+        setTools(initialTools.map(t => ({ ...t, website_url: formatUrl(t.website_url) })));
       }
     }
 
     fetchLiveTools();
-  }, [selectedSector]);
-
-  // Keep state updated if initialTools changes on reload
-  useEffect(() => {
-    setTools(initialTools);
-  }, [initialTools]);
+  }, [selectedSector, initialTools]);
 
   const filteredTools = tools.filter((tool) => {
     const query = search.toLowerCase();
@@ -139,34 +139,19 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
                     href={tool.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white transition-colors cursor-pointer"
                   >
                     Visit Site ↗
                   </a>
                 </div>
-                
+
                 <p className="text-sm text-slate-300 leading-relaxed">
                   {tool.description}
                 </p>
               </div>
 
               <div className="pt-4 border-t border-slate-800/80 flex flex-wrap gap-2 items-center text-xs">
-                {tool.hipaa_compliant && (
-                  <span className="px-2.5 py-1 rounded-md bg-emerald-950/80 border border-emerald-800/50 text-emerald-400 font-semibold">
-                    ✓ HIPAA
-                  </span>
-                )}
-                {tool.soc2_compliant && (
-                  <span className="px-2.5 py-1 rounded-md bg-blue-950/80 border border-blue-800/50 text-blue-400 font-semibold">
-                    ✓ SOC2
-                  </span>
-                )}
-                {tool.fda_cleared && (
-                  <span className="px-2.5 py-1 rounded-md bg-purple-950/80 border border-purple-800/50 text-purple-400 font-semibold">
-                    ✓ FDA Cleared
-                  </span>
-                )}
-                <span className="ml-auto text-xs text-slate-400 border border-slate-700 px-2 py-0.5 rounded font-medium">
+                <span className="text-xs text-slate-400 border border-slate-700 px-2 py-0.5 rounded font-medium">
                   {tool.pricing_model}
                 </span>
               </div>
