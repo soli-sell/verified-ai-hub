@@ -33,7 +33,6 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
 
   const sectors = ['All', 'Developer Tools', 'Healthcare', 'Life Sciences', 'Finance', 'Legal', 'Education', 'Marketing'];
 
-  // Safe helper to force valid absolute URLs
   const formatUrl = (rawUrl: string) => {
     if (!rawUrl) return '#';
     let url = rawUrl.trim();
@@ -41,6 +40,14 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
       url = `https://${url}`;
     }
     return url;
+  };
+
+  const handleVisitSite = (e: React.MouseEvent, url: string) => {
+    e.stopPropagation(); // Stop event propagation to parent containers
+    const formatted = formatUrl(url);
+    if (formatted && formatted !== '#') {
+      window.open(formatted, '_blank', 'noopener,noreferrer');
+    }
   };
 
   useEffect(() => {
@@ -135,14 +142,13 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
                       {tool.name}
                     </h3>
                   </div>
-                  <a
-                    href={tool.website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white transition-colors cursor-pointer"
+                  <button
+                    type="button"
+                    onClick={(e) => handleVisitSite(e, tool.website_url)}
+                    className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white transition-colors cursor-pointer relative z-10"
                   >
                     Visit Site ↗
-                  </a>
+                  </button>
                 </div>
 
                 <p className="text-sm text-slate-300 leading-relaxed">
