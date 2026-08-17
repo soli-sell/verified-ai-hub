@@ -27,11 +27,23 @@ export default function AdminPage() {
     e.preventDefault()
     setLoading(true)
 
+    // Ensure URL has https:// prefix
+    let finalUrl = url.trim()
+    if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+      finalUrl = `https://${finalUrl}`
+    }
+
     try {
       const res = await fetch('/api/tools', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, category, url, pricing, description })
+        body: JSON.stringify({ 
+          name, 
+          category, 
+          url: finalUrl, 
+          pricing, 
+          description 
+        })
       })
 
       const result = await res.json()
@@ -104,12 +116,12 @@ export default function AdminPage() {
         <div>
           <label className="block text-sm mb-1 font-medium">Website URL</label>
           <input
-            type="url"
+            type="text"
             required
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             className="w-full p-2 bg-slate-700 rounded border border-slate-600 text-white focus:outline-none"
-            placeholder="https://..."
+            placeholder="claude.ai or https://claude.ai"
           />
         </div>
 
