@@ -33,14 +33,24 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
 
   const sectors = ['All', 'Developer Tools', 'Healthcare', 'Life Sciences', 'Finance', 'Legal', 'Education', 'Marketing'];
 
-  // Normalizes URLs so they always open correctly in a new tab
+  // Clean raw database string into a strictly valid web URL
   const formatUrl = (rawUrl: string) => {
     if (!rawUrl) return '#';
-    let url = rawUrl.trim();
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = `https://${url}`;
+    let str = String(rawUrl).trim();
+    
+    // Extract actual URL if string contains markdown like [text](url)
+    const mdMatch = str.match(/\((https?:\/\/[^)]+)\)/);
+    if (mdMatch) {
+      str = mdMatch[1];
     }
-    return url;
+
+    // Strip trailing quotes, brackets, or weird trailing characters
+    str = str.replace(/[\\"'>\]]+$/g, '').replace(/^[\\"'>\[]+/g, '').trim();
+
+    if (!str.startsWith('http://') && !str.startsWith('https://')) {
+      str = `https://${str}`;
+    }
+    return str;
   };
 
   useEffect(() => {
@@ -145,7 +155,6 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
                     </h3>
                   </div>
 
-                  {/* Bright Blue Visit Site Button */}
                   <a
                     href={tool.website_url}
                     target="_blank"
