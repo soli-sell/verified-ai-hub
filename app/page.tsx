@@ -61,24 +61,11 @@ export default function HomePage(): JSX.Element {
     loadInitialTools();
   }, []);
 
-  const scrollToDirectory = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const el = document.getElementById('directory-section');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const navigateToAdmin = (e: React.MouseEvent) => {
-    e.preventDefault();
-    window.location.href = '/admin';
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      <header className="sticky top-0 z-[100] backdrop-blur-md bg-slate-950/90 border-b border-slate-800">
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-950/90 border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.location.href = '/'}>
             <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white text-lg">
               V
             </div>
@@ -86,17 +73,19 @@ export default function HomePage(): JSX.Element {
               Verified<span className="text-blue-500">AI</span>Hub
             </span>
           </div>
-          <div className="flex items-center gap-3 relative z-[110]">
-            <button
-              type="button"
-              onClick={navigateToAdmin}
-              className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white transition-colors cursor-pointer"
+          <div className="flex items-center gap-3">
+            <a
+              href="/admin"
+              className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white transition-colors"
             >
               Admin Panel
-            </button>
+            </a>
             <button
               type="button"
-              onClick={scrollToDirectory}
+              onClick={() => {
+                const el = document.getElementById('directory-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
               className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors cursor-pointer"
             >
               Explore Index
