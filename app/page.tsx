@@ -74,12 +74,15 @@ export default function HomePage(): JSX.Element {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <a
-              href="/admin"
-              className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white transition-colors"
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = '/admin';
+              }}
+              className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white transition-colors cursor-pointer"
             >
               Admin Panel
-            </a>
+            </button>
             <button
               type="button"
               onClick={() => {
