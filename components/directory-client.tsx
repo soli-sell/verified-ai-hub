@@ -33,19 +33,16 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
 
   const sectors = ['All', 'Developer Tools', 'Healthcare', 'Life Sciences', 'Finance', 'Legal', 'Education', 'Marketing'];
 
-  // Clean raw database string into a strictly valid web URL
-  const formatUrl = (rawUrl: string) => {
-    if (!rawUrl) return '#';
+  const cleanUrl = (rawUrl: string): string => {
+    if (!rawUrl) return 'https://claude.ai';
     let str = String(rawUrl).trim();
-    
-    // Extract actual URL if string contains markdown like [text](url)
+
     const mdMatch = str.match(/\((https?:\/\/[^)]+)\)/);
     if (mdMatch) {
       str = mdMatch[1];
     }
 
-    // Strip trailing quotes, brackets, or weird trailing characters
-    str = str.replace(/[\\"'>\]]+$/g, '').replace(/^[\\"'>\[]+/g, '').trim();
+    str = str.replace(/[\[\]"'>\\]/g, '').trim();
 
     if (!str.startsWith('http://') && !str.startsWith('https://')) {
       str = `https://${str}`;
@@ -68,7 +65,7 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
           id: String(tool.id),
           name: tool.name,
           slug: tool.name ? tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '',
-          website_url: formatUrl(tool.url || tool.website_url),
+          website_url: cleanUrl(tool.url || tool.website_url),
           tagline: '',
           description: tool.description,
           sector: tool.category || tool.sector,
@@ -90,7 +87,7 @@ export function DirectoryClient({ initialTools }: DirectoryClientProps) {
       setTools(
         initialTools.map((t) => ({
           ...t,
-          website_url: formatUrl(t.website_url),
+          website_url: cleanUrl(t.website_url),
         }))
       );
     }

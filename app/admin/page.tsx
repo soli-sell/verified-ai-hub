@@ -1,163 +1,117 @@
-'use client'
+import Link from 'next/link';
+import DirectoryClient, { AITool } from '@/components/directory-client';
+import { createClient } from '@supabase/supabase-js';
 
-import { useState } from 'react'
+const supabaseUrl = 'https://knsajxxoarmskzxeatyr.supabase.co';
+const supabaseAnonKey = 'sb_publishable_I40WNHiyfcV8tHG0HLGHwA_ad0PAvmS';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export default function AdminPage() {
-  const [pin, setPin] = useState('')
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+export const revalidate = 0;
 
-  // Form State
-  const [name, setName] = useState('')
-  const [category, setCategory] = useState('Healthcare')
-  const [url, setUrl] = useState('')
-  const [pricing, setPricing] = useState('Freemium')
-  const [description, setDescription] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (pin === '1234') {
-      setIsAuthenticated(true)
-    } else {
-      alert('Incorrect PIN')
-    }
+function cleanUrl(rawUrl: string): string {
+  if (!rawUrl) return 'https://claude.ai';
+  let str = String(rawUrl).trim();
+  
+  // Extract URL inside markdown parenthesis if present [text](url)
+  const mdMatch = str.match(/\((https?:\/\/[^)]+)\)/);
+  if (mdMatch) {
+    str = mdMatch[1];
   }
+  
+  // Remove brackets, quotes, or trailing punctuation
+  str = str.replace(/[\[\]"'>\\]/g, '').trim();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+  if (!str.startsWith('http://') && !str.startsWith('https://')) {
+    str = `https://${str}`;
+  }
+  return str;
+}
 
-    // Ensure URL has https:// prefix
-    let finalUrl = url.trim()
-    if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
-      finalUrl = `https://${finalUrl}`
+async function getTools(): Promise<AITool[]> {
+  try {
+    const { data, error } = await supabase
+      .from('tools')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error || !data) {
+      console.error('Error fetching tools:', error);
+      return [];
     }
 
-    try {
-      const res = await fetch('/api/tools', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          name, 
-          category, 
-          url: finalUrl, 
-          pricing, 
-          description 
-        })
-      })
-
-      const result = await res.json()
-
-      if (!res.ok) {
-        alert(`Database Error: ${result.error}`)
-        setLoading(false)
-        return
-      }
-
-      alert('Tool added successfully!')
-      setName('')
-      setUrl('')
-      setDescription('')
-    } catch (err) {
-      alert('Failed to connect to backend server.')
-    } finally {
-      setLoading(false)
-    }
+    return data.map((tool: any) => ({
+      id: String(tool.id),
+      name: tool.name,
+      slug: tool.name ? tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '',
+      website_url: cleanUrl(tool.url),
+      tagline: '',
+      description: tool.description,
+      sector: tool.category,
+      pricing_model: tool.pricing,
+      fda_cleared: false,
+      hipaa_compliant: false,
+      soc2_compliant: false,
+      target_audience: 'General Users',
+    })) as AITool[];
+  } catch (err) {
+    console.error('Failed to query tools:', err);
+    return [];
   }
+}
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-4">
-        <form onSubmit={handleLogin} className="bg-slate-800 p-6 rounded-xl space-y-4 max-w-sm w-full">
-          <h1 className="text-xl font-bold text-center">Admin Verification</h1>
-          <input
-            type="password"
-            placeholder="Enter PIN"
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-            className="w-full p-2 bg-slate-700 rounded border border-slate-600 text-white focus:outline-none"
-          />
-          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded font-semibold">
-            Unlock Admin
-          </button>
-        </form>
-      </div>
-    )
-  }
+export default async function HomePage(): Promise<JSX.Element> {
+  const tools = await getTools();
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Add New AI Tool</h1>
-      <form onSubmit={handleSubmit} className="space-y-4 bg-slate-800 p-6 rounded-xl border border-slate-700">
-        <div>
-          <label className="block text-sm mb-1 font-medium">Tool Name</label>
-          <input
-            type="text"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full p-2 bg-slate-700 rounded border border-slate-600 text-white focus:outline-none"
-            placeholder="e.g. Claude 3.5 Sonnet"
-          />
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white text-lg">
+              V
+            </div>
+            <span className="font-bold text-xl text-white">
+              Verified<span className="text-blue-500">AI</span>Hub
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin"
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500"
+            >
+              Admin Panel
+            </Link>
+            <Link
+              href="#directory"
+              className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white"
+            >
+              Explore Index
+            </Link>
+          </div>
         </div>
+      </header>
 
-        <div>
-          <label className="block text-sm mb-1 font-medium font-semibold">Category</label>
-          <input
-            type="text"
-            required
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full p-2 bg-slate-700 rounded border border-slate-600 text-white focus:outline-none"
-            placeholder="e.g. Healthcare, Productivity, Coding"
-          />
+      <section className="pt-20 pb-16 border-b border-slate-800 text-center px-4">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/60 border border-blue-800/50 text-blue-400 text-xs font-semibold">
+            <span className="flex h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+            Auto-Updated AI Index
+          </div>
+          <h1 className="text-4xl sm:text-6xl font-extrabold text-white leading-tight">
+            The Verified Index for <br />
+            <span className="bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">
+              Healthcare, Life Sciences & AI Tools
+            </span>
+          </h1>
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Discover and explore verified AI tools across all industry sectors.
+          </p>
         </div>
+      </section>
 
-        <div>
-          <label className="block text-sm mb-1 font-medium">Website URL</label>
-          <input
-            type="text"
-            required
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            className="w-full p-2 bg-slate-700 rounded border border-slate-600 text-white focus:outline-none"
-            placeholder="claude.ai or https://claude.ai"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm mb-1 font-medium">Pricing Model</label>
-          <select
-            value={pricing}
-            onChange={(e) => setPricing(e.target.value)}
-            className="w-full p-2 bg-slate-700 rounded border border-slate-600 text-white focus:outline-none"
-          >
-            <option value="Free">Free</option>
-            <option value="Freemium">Freemium</option>
-            <option value="Paid">Paid</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm mb-1 font-medium">Description</label>
-          <textarea
-            required
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2 bg-slate-700 rounded border border-slate-600 text-white focus:outline-none"
-            placeholder="Short overview of the tool..."
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-green-600 hover:bg-green-500 py-3 rounded font-bold text-lg disabled:opacity-50"
-        >
-          {loading ? 'Adding Tool...' : 'Add Tool to Database'}
-        </button>
-      </form>
+      <section id="directory" className="py-16 max-w-7xl mx-auto px-4">
+        <DirectoryClient initialTools={tools} />
+      </section>
     </div>
-  )
+  );
 }
