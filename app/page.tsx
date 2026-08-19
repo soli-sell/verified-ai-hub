@@ -81,6 +81,13 @@ export default async function HomePage(): Promise<JSX.Element> {
               Admin Panel
             </Link>
 
+            <Link
+              href="/submit"
+              className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white transition-colors"
+            >
+              Submit Tool
+            </Link>
+
             <a
               href="#directory-section"
               className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors"
