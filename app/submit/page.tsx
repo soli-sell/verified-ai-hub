@@ -1,190 +1,184 @@
-import { createClient } from "@supabase/supabase-js";
-import { redirect } from "next/navigation";
-import Link from "next/link";
+'use client';
 
-export default async function SubmitPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ success?: string }>;
-}) {
-  const params = await searchParams;
-  const isSuccess = params?.success === "true";
+import { useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import Link from 'next/link';
 
-  async function submitTool(formData: FormData) {
-    "use server";
+const supabase = createClient(
+  "https://knsajxxoarmskzxeatyr.supabase.co",
+  "sb_publishable_I40WNHiyfcV8tHG0HLGHwA_ad0PAvmS"
+);
 
-    const name = formData.get("name") as string;
-    let website_url = (formData.get("website_url") as string || "").trim();
-    const tagline = formData.get("tagline") as string;
-    const description = formData.get("description") as string;
-    const sector = formData.get("sector") as string;
-    const pricing_model = formData.get("pricing_model") as string;
-    const contact_email = formData.get("contact_email") as string;
+export default function SubmitToolPage() {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    url: '',
+    submitter_email: '',
+    category: 'Healthcare',
+    pricing: 'Enterprise',
+    hipaa_compliant: false,
+    soc2_compliant: false,
+    fda_cleared: false,
+  });
 
-    // Automatically prepends https:// if user enters "claude.ai" instead of "https://claude.ai"
-    if (website_url && !website_url.startsWith("http://") && !website_url.startsWith("https://")) {
-      website_url = `https://${website_url}`;
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const cleanUrl = (rawUrl: string) => {
+    let url = rawUrl.trim();
+    const markdownMatch = url.match(/\((https?:\/\/[^\s)]+)\)/);
+    if (markdownMatch) {
+      url = markdownMatch[1];
+    }
+    if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://${url}`;
+    }
+    return url;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const sanitizedUrl = cleanUrl(formData.url);
+    const payload = { ...formData, url: sanitizedUrl, status: 'pending' };
+
+    // 1. Save to Supabase
+    const { error: dbError } = await supabase.from('tools').insert([payload]);
+
+    if (dbError) {
+      alert('Database error: ' + dbError.message);
+      setLoading(false);
+      return;
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    // 2. Trigger Email Endpoints (Admin Notification + Submitter Receipt)
+    try {
+      const res = await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    const { error } = await supabase.from("tool_submissions").insert([
-      {
-        name,
-        website_url,
-        tagline,
-        description,
-        sector,
-        pricing_model,
-        contact_email,
-        status: "pending",
-      },
-    ]);
+      const resData = await res.json();
 
-    if (error) {
-      console.error("Submission DB Error:", error);
-      throw new Error(error.message);
+      if (!res.ok) {
+        console.error('Notification Error:', resData);
+      }
+    } catch (err: any) {
+      console.error('Failed to trigger email service:', err);
     }
 
-    redirect("/submit?success=true");
-  }
+    setLoading(false);
+    setSubmitted(true);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-extrabold text-blue-400 tracking-tight flex items-center gap-2">
-            ✨ Verified AI Hub
-          </Link>
-          <Link href="/" className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500">
-            ← Back to Directory
-          </Link>
+    <div style={{ minHeight: '100vh', backgroundColor: '#e2f1f8', fontFamily: 'system-ui, sans-serif' }}>
+      <nav style={{ backgroundColor: '#1d4ed8', padding: '16px 32px' }}>
+        <Link href="/" style={{ color: '#ffffff', textDecoration: 'none', fontWeight: '600' }}>
+          ← Back to Directory
+        </Link>
+      </nav>
+
+      <main style={{ maxWidth: '800px', margin: '40px auto', padding: '0 24px' }}>
+        <div style={{ backgroundColor: '#1e3a8a', color: '#ffffff', padding: '24px', borderRadius: '12px', marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '700', marginTop: 0 }}>Verified Listing Guidelines</h2>
+          <p style={{ fontSize: '13px', color: '#cbd5e1', margin: '8px 0 16px 0', lineHeight: '1.5' }}>
+            To maintain our high credibility standards, all submissions are manually reviewed before going live.
+          </p>
+          <ul style={{ fontSize: '13px', color: '#e2e8f0', margin: 0, paddingLeft: '20px', lineHeight: '1.6' }}>
+            <li>Must belong strictly to Healthcare, Life Sciences, Biotech, Pharma, or Diagnostics.</li>
+            <li>Regulatory badges (HIPAA, SOC2, FDA) must be verifiable via public documentation.</li>
+            <li>Generic AI tools without medical adaptation will be rejected.</li>
+          </ul>
         </div>
-      </header>
 
-      <main className="max-w-2xl mx-auto px-6 py-12">
-        {isSuccess ? (
-          <div className="bg-slate-900 p-8 border border-slate-800 rounded-2xl text-center space-y-4 shadow-xl">
-            <div className="text-4xl">🎉</div>
-            <h1 className="text-2xl font-bold text-white">Submission Received!</h1>
-            <p className="text-slate-400 text-sm">
-              Thank you for submitting your AI tool. It is now waiting in your Admin Dashboard under Pending Approvals.
-            </p>
-            <div className="pt-4 flex justify-center gap-4">
-              <Link href="/admin" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl">
-                Go to Admin Dashboard →
-              </Link>
-              <Link href="/submit" className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl">
-                Submit Another Tool
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="space-y-2 text-center mb-8">
-              <h1 className="text-3xl font-extrabold text-white">Submit an AI Tool</h1>
-              <p className="text-slate-400 text-sm">Add your application to the directory for review.</p>
-            </div>
-
-            <form action={submitTool} className="space-y-6 bg-slate-900 p-8 border border-slate-800 rounded-2xl shadow-xl">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Tool Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  placeholder="e.g. Claude AI"
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Website URL *</label>
-                <input
-                  type="text"
-                  name="website_url"
-                  required
-                  placeholder="claude.ai or https://claude.ai"
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Contact Email *</label>
-                <input
-                  type="email"
-                  name="contact_email"
-                  required
-                  placeholder="founder@example.com"
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Tagline *</label>
-                <input
-                  type="text"
-                  name="tagline"
-                  required
-                  placeholder="e.g. Next-generation AI assistant"
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Sector *</label>
-                  <select
-                    name="sector"
-                    required
-                    className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Developer Tools">Developer Tools</option>
-                    <option value="Healthcare">Healthcare</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Legal">Legal</option>
-                    <option value="Education">Education</option>
-                    <option value="Marketing">Marketing</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Pricing Model *</label>
-                  <select
-                    name="pricing_model"
-                    required
-                    className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Freemium">Freemium</option>
-                    <option value="Free">Free</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Enterprise">Enterprise</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">Description *</label>
-                <textarea
-                  name="description"
-                  required
-                  rows={4}
-                  placeholder="Describe what the tool does..."
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '32px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+          {submitted ? (
+            <div style={{ textAlign: 'center', padding: '32px 0' }}>
+              <h2 style={{ color: '#047857', fontSize: '24px', fontWeight: '800' }}>Submission Received!</h2>
+              <p style={{ color: '#475569', margin: '12px 0 24px 0' }}>
+                Your tool has been submitted to the moderation queue. A confirmation receipt has been sent to your email address.
+              </p>
               <button
-                type="submit"
-                className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors shadow-lg shadow-blue-600/20"
+                onClick={() => { setSubmitted(false); setFormData({ name: '', description: '', url: '', submitter_email: '', category: 'Healthcare', pricing: 'Enterprise', hipaa_compliant: false, soc2_compliant: false, fda_cleared: false }); }}
+                style={{ backgroundColor: '#1d4ed8', color: '#ffffff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer' }}
               >
-                Submit Tool
+                Submit Another Tool
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', marginBottom: '24px' }}>Submit an AI Solution</h1>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>Tool / Model Name *</label>
+                <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} placeholder="e.g. DeepHealth AI" />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>Official Website URL *</label>
+                <input required type="text" value={formData.url} onChange={(e) => setFormData({ ...formData, url: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} placeholder="https://www.deephealth.com" />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>Your Contact / Vendor Email *</label>
+                <input required type="email" value={formData.submitter_email} onChange={(e) => setFormData({ ...formData, submitter_email: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} placeholder="contact@company.com" />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>Category *</label>
+                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }}>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Life Sciences">Life Sciences</option>
+                    <option value="Biotech">Biotech</option>
+                    <option value="Pharma">Pharma</option>
+                    <option value="Diagnostics">Diagnostics</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>Pricing Model *</label>
+                  <select value={formData.pricing} onChange={(e) => setFormData({ ...formData, pricing: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }}>
+                    <option value="Enterprise">Enterprise</option>
+                    <option value="Freemium">Freemium</option>
+                    <option value="Open Source">Open Source</option>
+                    <option value="Free Research">Free Research</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>Description *</label>
+                <textarea required rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} placeholder="Briefly describe the clinical or scientific capability..." />
+              </div>
+
+              <div style={{ marginBottom: '28px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '12px' }}>Verified Standards & Compliance Badges</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <label style={{ fontSize: '14px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                    <input type="checkbox" style={{ width: '18px', height: '18px', cursor: 'pointer' }} checked={formData.hipaa_compliant} onChange={(e) => setFormData({ ...formData, hipaa_compliant: e.target.checked })} /> 
+                    <span><strong>HIPAA Compliant</strong> (Health Insurance Portability and Accountability Act)</span>
+                  </label>
+                  <label style={{ fontSize: '14px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                    <input type="checkbox" style={{ width: '18px', height: '18px', cursor: 'pointer' }} checked={formData.soc2_compliant} onChange={(e) => setFormData({ ...formData, soc2_compliant: e.target.checked })} /> 
+                    <span><strong>SOC 2 Certified</strong> (Service Organization Control 2 Type II)</span>
+                  </label>
+                  <label style={{ fontSize: '14px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                    <input type="checkbox" style={{ width: '18px', height: '18px', cursor: 'pointer' }} checked={formData.fda_cleared} onChange={(e) => setFormData({ ...formData, fda_cleared: e.target.checked })} /> 
+                    <span><strong>FDA Cleared</strong> (510(k) or De Novo Medical Device Clearance)</span>
+                  </label>
+                </div>
+              </div>
+
+              <button disabled={loading} type="submit" style={{ backgroundColor: '#1d4ed8', color: '#ffffff', width: '100%', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: '700', fontSize: '15px', cursor: 'pointer' }}>
+                {loading ? 'Submitting...' : 'Submit Tool for Review'}
               </button>
             </form>
-          </>
-        )}
+          )}
+        </div>
       </main>
     </div>
   );

@@ -1,124 +1,71 @@
-import Link from 'next/link';
-import DirectoryClient, { AITool } from '@/components/directory-client';
 import { createClient } from '@supabase/supabase-js';
+import Link from 'next/link';
 
-const supabaseUrl = 'https://knsajxxoarmskzxeatyr.supabase.co';
-const supabaseAnonKey = 'sb_publishable_I40WNHiyfcV8tHG0HLGHwA_ad0PAvmS';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(
+  "https://knsajxxoarmskzxeatyr.supabase.co",
+  "sb_publishable_I40WNHiyfcV8tHG0HLGHwA_ad0PAvmS"
+);
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-function cleanUrl(rawUrl: string): string {
-  if (!rawUrl) return 'https://claude.ai';
-  let str = String(rawUrl).trim();
-
-  const mdMatch = str.match(/\((https?:\/\/[^)]+)\)/);
-  if (mdMatch) {
-    str = mdMatch[1];
-  }
-
-  str = str.replace(/[\[\]"'>\\]/g, '').trim();
-
-  if (!str.startsWith('http://') && !str.startsWith('https://')) {
-    str = `https://${str}`;
-  }
-  return str;
-}
-
-async function getTools(): Promise<AITool[]> {
-  try {
-    const { data, error } = await supabase
-      .from('tools')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error || !data) {
-      console.error('Error fetching tools:', error);
-      return [];
-    }
-
-    return data.map((tool: any) => ({
-      id: String(tool.id),
-      name: tool.name,
-      slug: tool.name ? tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '',
-      website_url: cleanUrl(tool.url),
-      tagline: '',
-      description: tool.description,
-      sector: tool.category,
-      pricing_model: tool.pricing,
-      fda_cleared: false,
-      hipaa_compliant: false,
-      soc2_compliant: false,
-      target_audience: 'General Users',
-    })) as AITool[];
-  } catch (err) {
-    console.error('Failed to query tools:', err);
-    return [];
-  }
-}
-
-export default async function HomePage(): Promise<JSX.Element> {
-  const tools = await getTools();
+export default async function HomePage() {
+  // Fetch directly bypassing cache
+  const { data: tools } = await supabase
+    .from('tools')
+    .select('*')
+    .eq('status', 'approved');
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white text-lg">
-              V
-            </div>
-            <span className="font-bold text-xl text-white">
-              Verified<span className="text-blue-500">AI</span>Hub
-            </span>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
+      <header style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: '#ffffff', padding: '24px 32px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>Verified AI Hub</h1>
+          <Link href="/submit" style={{ backgroundColor: '#0f766e', color: '#ffffff', textDecoration: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: '600', fontSize: '14px' }}>
+            + Submit AI Tool
           </Link>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin"
-              className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white transition-colors"
-            >
-              Admin Panel
-            </Link>
-
-            <Link
-              href="/submit"
-              className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white transition-colors"
-            >
-              Submit Tool
-            </Link>
-
-            <a
-              href="#directory-section"
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors"
-            >
-              Explore Index
-            </a>
-          </div>
         </div>
       </header>
 
-      <section className="pt-20 pb-16 border-b border-slate-800 text-center px-4">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/60 border border-blue-800/50 text-blue-400 text-xs font-semibold">
-            <span className="flex h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
-            Auto-Updated AI Index
-          </div>
-          <h1 className="text-4xl sm:text-6xl font-extrabold text-white leading-tight">
-            The Verified Index for <br />
-            <span className="bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">
-              Healthcare, Life Sciences & AI Tools
-            </span>
-          </h1>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Discover and explore verified AI tools across all industry sectors.
+      <main style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 32px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <h2 style={{ fontSize: '36px', fontWeight: '800', color: '#0f172a', marginBottom: '12px' }}>Verified Medical & Life Sciences AI</h2>
+          <p style={{ fontSize: '16px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>
+            Discover compliant, healthcare-ready artificial intelligence tools filtered by HIPAA, SOC 2, and FDA clearances.
           </p>
         </div>
-      </section>
 
-      <section id="directory-section" className="py-16 max-w-7xl mx-auto px-4 scroll-mt-20">
-        <DirectoryClient initialTools={tools} />
-      </section>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+          {(tools || []).map((tool) => (
+            <div key={tool.id} style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <span style={{ fontSize: '11px', backgroundColor: '#f1f5f9', color: '#475569', padding: '4px 8px', borderRadius: '4px', fontWeight: '600' }}>
+                  {tool.category}
+                </span>
+                <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: '12px 0 8px 0' }}>{tool.name}</h3>
+                <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.5', margin: '0 0 16px 0' }}>
+                  {tool.description?.slice(0, 110)}...
+                </p>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                  {tool.hipaa_compliant && <span style={{ fontSize: '11px', backgroundColor: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>HIPAA</span>}
+                  {tool.soc2_compliant && <span style={{ fontSize: '11px', backgroundColor: '#e0e7ff', color: '#3730a3', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>SOC 2</span>}
+                  {tool.fda_cleared && <span style={{ fontSize: '11px', backgroundColor: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>FDA</span>}
+                </div>
+
+                <Link
+                  href={`/tools/${tool.slug}`}
+                  style={{ display: 'block', textAlign: 'center', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', textDecoration: 'none', padding: '10px', borderRadius: '6px', fontWeight: '600', fontSize: '14px' }}
+                >
+                  View Details & Verification →
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
     </div>
   );
 }
