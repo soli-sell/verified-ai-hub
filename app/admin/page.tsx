@@ -1,280 +1,401 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   "https://knsajxxoarmskzxeatyr.supabase.co",
   "sb_publishable_I40WNHiyfcV8tHG0HLGHwA_ad0PAvmS"
 );
 
-export default function AdminDashboard() {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [tools, setTools] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+interface Tool {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  url?: string;
+  pricing?: string;
+  submitter_email?: string;
+  status?: string;
+}
 
-  const fetchTools = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('tools')
-      .select('*')
-      .order('id', { ascending: false });
+interface Post {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  author: string;
+  author_email?: string;
+  excerpt: string;
+  content: string;
+  status?: string;
+}
 
-    if (!error && data) {
-      setTools(data);
-    }
-    setLoading(false);
+export default function AdminPortal() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [authError, setAuthError] = useState(false);
+
+  // Data States
+  const [pendingTools, setPendingTools] = useState<Tool[]>([]);
+  const [approvedTools, setApprovedTools] = useState<Tool[]>([]);
+  const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
+  
+  const [activeTab, setActiveTab] = useState<"approved-tools" | "pending-tools" | "pending-posts" | "new-post">("approved-tools");
+  const [actionStatus, setActionStatus] = useState("");
+
+  // Direct Admin Article Form
+  const [postData, setPostData] = useState({
+    slug: "",
+    title: "",
+    category: "Compliance & Security",
+    read_time: "5 min read",
+    author: "VerifiedAIHub Editorial Board",
+    excerpt: "",
+    content: ""
+  });
+
+  const fetchAdminData = async () => {
+    // 1. Fetch Approved Live Tools
+    const { data: approvedData } = await supabase
+      .from("tools")
+      .select("*")
+      .or("status.eq.approved,status.is.null")
+      .order("id", { ascending: false });
+    if (approvedData) setApprovedTools(approvedData);
+
+    // 2. Fetch Pending Tools
+    const { data: pendingToolsData } = await supabase
+      .from("tools")
+      .select("*")
+      .eq("status", "pending")
+      .order("id", { ascending: false });
+    if (pendingToolsData) setPendingTools(pendingToolsData);
+
+    // 3. Fetch Pending Guest Posts
+    const { data: pendingPostsData } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("status", "pending")
+      .order("id", { ascending: false });
+    if (pendingPostsData) setPendingPosts(pendingPostsData);
   };
 
   useEffect(() => {
-    if (authenticated) {
-      fetchTools();
+    if (isAuthenticated) {
+      fetchAdminData();
     }
-  }, [authenticated]);
+  }, [isAuthenticated]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'admin2026') {
-      setAuthenticated(true);
+    if (passwordInput === "admin2026") {
+      setIsAuthenticated(true);
+      setAuthError(false);
     } else {
-      alert('Incorrect Password');
+      setAuthError(true);
     }
   };
 
-  const handleApprove = async (tool: any) => {
-    setActionLoading(tool.id);
-    try {
-      const res = await fetch('/api/approve-tool', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: tool.id,
-          name: tool.name,
-          url: tool.url,
-          submitter_email: tool.submitter_email,
-        }),
-      });
+  // Tool Actions
+  const handleApproveTool = async (id: string) => {
+    const { error } = await supabase.from("tools").update({ status: "approved" }).eq("id", id);
+    if (!error) {
+      setActionStatus("✓ Tool marked as Approved and published to homepage!");
+      fetchAdminData();
+    }
+  };
 
-      const resData = await res.json();
+  const handleSetPendingTool = async (id: string) => {
+    const { error } = await supabase.from("tools").update({ status: "pending" }).eq("id", id);
+    if (!error) {
+      setActionStatus("✓ Tool moved back to Pending status.");
+      fetchAdminData();
+    }
+  };
 
-      if (res.ok) {
-        fetchTools();
-      } else {
-        alert('Failed to approve tool: ' + (resData.error || 'Unknown error'));
+  const handleDeleteTool = async (id: string) => {
+    if (confirm("Are you sure you want to permanently delete this tool listing?")) {
+      const { error } = await supabase.from("tools").delete().eq("id", id);
+      if (!error) {
+        setActionStatus("✓ Tool permanently deleted from database.");
+        fetchAdminData();
       }
-    } catch (err: any) {
-      alert('Error connecting to approve route: ' + err.message);
     }
-    setActionLoading(null);
   };
 
-  const handleMoveToPending = async (id: string) => {
-    setActionLoading(id);
-    const { error } = await supabase
-      .from('tools')
-      .update({ status: 'pending' })
-      .eq('id', id);
-
+  // Post Actions
+  const handleApprovePost = async (id: string) => {
+    const { error } = await supabase.from("posts").update({ status: "approved" }).eq("id", id);
     if (!error) {
-      fetchTools();
-    } else {
-      alert('Error updating tool status: ' + error.message);
+      setActionStatus("✓ Article approved and published live to /blog!");
+      fetchAdminData();
     }
-    setActionLoading(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this tool?')) return;
-    setActionLoading(id);
-    const { error } = await supabase.from('tools').delete().eq('id', id);
+  const handleRejectPost = async (id: string) => {
+    const { error } = await supabase.from("posts").delete().eq("id", id);
     if (!error) {
-      fetchTools();
-    } else {
-      alert('Error deleting tool: ' + error.message);
+      setActionStatus("✓ Guest article rejected and deleted.");
+      fetchAdminData();
     }
-    setActionLoading(null);
   };
 
-  const exportToCSV = () => {
-    if (tools.length === 0) {
-      alert('No data to export.');
-      return;
-    }
+  const handleDirectPublish = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionStatus("");
 
-    const headers = [
-      'ID',
-      'Name',
-      'Category',
-      'Pricing',
-      'URL',
-      'Submitter Email',
-      'Status',
-      'HIPAA Compliant',
-      'SOC 2 Compliant',
-      'FDA Cleared',
-      'Description'
-    ];
+    const formattedSlug = postData.slug.toLowerCase().replace(/\s+/g, "-");
 
-    const rows = tools.map((t) => [
-      `"${t.id || ''}"`,
-      `"${(t.name || '').replace(/"/g, '""')}"`,
-      `"${(t.category || '').replace(/"/g, '""')}"`,
-      `"${(t.pricing || '').replace(/"/g, '""')}"`,
-      `"${(t.url || '').replace(/"/g, '""')}"`,
-      `"${(t.submitter_email || '').replace(/"/g, '""')}"`,
-      `"${(t.status || 'approved').replace(/"/g, '""')}"`,
-      t.hipaa_compliant ? 'Yes' : 'No',
-      t.soc2_compliant ? 'Yes' : 'No',
-      t.fda_cleared ? 'Yes' : 'No',
-      `"${(t.description || '').replace(/"/g, '""')}"`
+    const { error } = await supabase.from("posts").insert([
+      {
+        ...postData,
+        slug: formattedSlug,
+        status: "approved"
+      }
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `verified_ai_hub_tools_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (error) {
+      setActionStatus(`Error publishing: ${error.message}`);
+    } else {
+      setActionStatus("✓ Direct Admin Article published live to /blog!");
+      setPostData({
+        slug: "",
+        title: "",
+        category: "Compliance & Security",
+        read_time: "5 min read",
+        author: "VerifiedAIHub Editorial Board",
+        excerpt: "",
+        content: ""
+      });
+    }
   };
 
-  if (!authenticated) {
+  if (!isAuthenticated) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', fontFamily: 'system-ui, sans-serif' }}>
-        <form onSubmit={handleLogin} style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', width: '100%', maxWidth: '360px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '16px', color: '#0f172a' }}>Admin Moderation Access</h2>
-          <input
-            type="password"
-            placeholder="Enter Admin Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', marginBottom: '16px', boxSizing: 'border-box' }}
-          />
-          <button type="submit" style={{ width: '100%', backgroundColor: '#1d4ed8', color: '#ffffff', padding: '10px', borderRadius: '6px', border: 'none', fontWeight: '600', cursor: 'pointer' }}>
-            Login to Admin Panel
-          </button>
-        </form>
+      <div style={{ backgroundColor: "#f0f9ff", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif", padding: "20px" }}>
+        <div style={{ backgroundColor: "#ffffff", padding: "32px", borderRadius: "16px", border: "1px solid #bae6fd", maxWidth: "400px", width: "100%", boxShadow: "0 4px 16px rgba(0,0,0,0.05)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", justifyContent: "center" }}>
+            <div style={{ width: "36px", height: "36px", backgroundColor: "#0284c7", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontWeight: "900", fontSize: "20px" }}>V</div>
+            <span style={{ fontSize: "22px", fontWeight: "900", color: "#0284c7" }}>VerifiedAIHub</span>
+          </div>
+
+          <h2 style={{ fontSize: "18px", fontWeight: "800", textAlign: "center", color: "#0f172a", marginBottom: "20px" }}>Admin Management Access</h2>
+
+          {authError && (
+            <div style={{ backgroundColor: "#fef2f2", color: "#b91c1c", padding: "10px", borderRadius: "8px", fontSize: "13px", marginBottom: "16px", textAlign: "center" }}>
+              Incorrect Access Passcode.
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <input
+              type="password"
+              placeholder="Enter Admin Passcode"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #bae6fd", fontSize: "14px", boxSizing: "border-box" }}
+            />
+            <button type="submit" style={{ backgroundColor: "#0284c7", color: "#ffffff", border: "none", padding: "12px", borderRadius: "8px", fontWeight: "bold", fontSize: "14px", cursor: "pointer" }}>
+              Access Control Panel
+            </button>
+          </form>
+        </div>
       </div>
     );
   }
 
-  const pendingTools = tools.filter((t) => t.status === 'pending');
-  const approvedTools = tools.filter((t) => t.status !== 'pending');
-
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, sans-serif', padding: '32px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Verified AI Hub Moderation</h1>
-          <p style={{ color: '#64748b', fontSize: '14px', margin: '4px 0 0 0' }}>Review, approve, and maintain listed life science tools.</p>
-        </div>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <button
-            onClick={exportToCSV}
-            style={{ backgroundColor: '#0f766e', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
-          >
-            📥 Export Tools to CSV
-          </button>
-          <Link href="/" style={{ color: '#1d4ed8', textDecoration: 'none', fontWeight: '600', fontSize: '14px' }}>
+    <div style={{ backgroundColor: "#f0f9ff", minHeight: "100vh", color: "#0f172a", fontFamily: "sans-serif" }}>
+      {/* Header */}
+      <header style={{ backgroundColor: "#ffffff", borderBottom: "1px solid #bae6fd", padding: "16px 24px" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ width: "32px", height: "32px", backgroundColor: "#0284c7", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontWeight: "900", fontSize: "18px" }}>V</div>
+            <span style={{ fontSize: "20px", fontWeight: "900", color: "#0284c7" }}>VerifiedAIHub Admin Panel</span>
+          </div>
+          <Link href="/" style={{ color: "#0369a1", textDecoration: "none", fontWeight: "bold", fontSize: "14px" }}>
             ← View Public Directory
           </Link>
         </div>
       </header>
 
-      {/* Pending Approval Section */}
-      <section style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#b45309', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>🚨 Pending Queue ({pendingTools.length})</span>
-        </h2>
-        {pendingTools.length === 0 ? (
-          <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#64748b' }}>
-            No pending submissions waiting for review.
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {pendingTools.map((tool) => (
-              <div key={tool.id} style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '10px', border: '1px solid #fde68a', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>{tool.name}</h3>
-                    <a href={tool.url} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#2563eb', textDecoration: 'none' }}>{tool.url}</a>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      disabled={actionLoading === tool.id}
-                      onClick={() => handleApprove(tool)}
-                      style={{ backgroundColor: '#059669', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
-                    >
-                      {actionLoading === tool.id ? 'Approving...' : 'Approve & Notify Vendor'}
-                    </button>
-                    <button
-                      disabled={actionLoading === tool.id}
-                      onClick={() => handleDelete(tool.id)}
-                      style={{ backgroundColor: '#dc2626', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-                <p style={{ fontSize: '14px', color: '#334155', margin: '0 0 12px 0', lineHeight: '1.5' }}>{tool.description}</p>
-                <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#64748b' }}>
-                  <span><strong>Category:</strong> {tool.category}</span>
-                  <span><strong>Pricing:</strong> {tool.pricing}</span>
-                  <span><strong>Vendor Email:</strong> {tool.submitter_email || 'Not provided'}</span>
-                </div>
-              </div>
-            ))}
+      <main style={{ maxWidth: "1100px", margin: "32px auto", padding: "0 24px" }}>
+        
+        {/* Navigation Tabs */}
+        <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap" }}>
+          <button
+            onClick={() => { setActiveTab("approved-tools"); setActionStatus(""); }}
+            style={{ padding: "10px 20px", borderRadius: "8px", border: "1px solid #bae6fd", backgroundColor: activeTab === "approved-tools" ? "#0284c7" : "#ffffff", color: activeTab === "approved-tools" ? "#ffffff" : "#0369a1", fontWeight: "bold", cursor: "pointer" }}
+          >
+            Approved Tools ({approvedTools.length})
+          </button>
+
+          <button
+            onClick={() => { setActiveTab("pending-tools"); setActionStatus(""); }}
+            style={{ padding: "10px 20px", borderRadius: "8px", border: "1px solid #bae6fd", backgroundColor: activeTab === "pending-tools" ? "#0284c7" : "#ffffff", color: activeTab === "pending-tools" ? "#ffffff" : "#0369a1", fontWeight: "bold", cursor: "pointer" }}
+          >
+            Pending Tools ({pendingTools.length})
+          </button>
+
+          <button
+            onClick={() => { setActiveTab("pending-posts"); setActionStatus(""); }}
+            style={{ padding: "10px 20px", borderRadius: "8px", border: "1px solid #bae6fd", backgroundColor: activeTab === "pending-posts" ? "#0284c7" : "#ffffff", color: activeTab === "pending-posts" ? "#ffffff" : "#0369a1", fontWeight: "bold", cursor: "pointer" }}
+          >
+            Pending Guest Articles ({pendingPosts.length})
+          </button>
+
+          <button
+            onClick={() => { setActiveTab("new-post"); setActionStatus(""); }}
+            style={{ padding: "10px 20px", borderRadius: "8px", border: "1px solid #bae6fd", backgroundColor: activeTab === "new-post" ? "#0284c7" : "#ffffff", color: activeTab === "new-post" ? "#ffffff" : "#0369a1", fontWeight: "bold", cursor: "pointer" }}
+          >
+            + Create Admin Article
+          </button>
+        </div>
+
+        {actionStatus && (
+          <div style={{ backgroundColor: "#ecfdf5", border: "1px solid #a7f3d0", color: "#047857", padding: "14px 18px", borderRadius: "8px", fontWeight: "bold", fontSize: "14px", marginBottom: "24px" }}>
+            {actionStatus}
           </div>
         )}
-      </section>
 
-      {/* Approved Directory Section */}
-      <section>
-        <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#047857', marginBottom: '16px' }}>
-          ✅ Approved Listings ({approvedTools.length})
-        </h2>
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
-                <th style={{ padding: '12px 16px' }}>Name</th>
-                <th style={{ padding: '12px 16px' }}>Category</th>
-                <th style={{ padding: '12px 16px' }}>Submitter Email</th>
-                <th style={{ padding: '12px 16px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {approvedTools.map((tool) => (
-                <tr key={tool.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: '600', color: '#0f172a' }}>{tool.name}</td>
-                  <td style={{ padding: '12px 16px', color: '#475569' }}>{tool.category}</td>
-                  <td style={{ padding: '12px 16px', color: '#475569' }}>{tool.submitter_email || 'N/A'}</td>
-                  <td style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <button
-                      disabled={actionLoading === tool.id}
-                      onClick={() => handleMoveToPending(tool.id)}
-                      style={{ backgroundColor: '#f59e0b', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '4px', fontWeight: '600', cursor: 'pointer', fontSize: '12px' }}
-                    >
-                      {actionLoading === tool.id ? 'Moving...' : 'Move to Pending'}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(tool.id)}
-                      style={{ backgroundColor: 'transparent', color: '#dc2626', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+        {/* TAB 1: APPROVED LIVE TOOLS MANAGER */}
+        {activeTab === "approved-tools" && (
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", border: "1px solid #e0f2fe", padding: "32px" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: "800", marginBottom: "16px" }}>Approved Directory Listings ({approvedTools.length})</h2>
+            {approvedTools.length === 0 ? (
+              <p style={{ color: "#64748b", fontSize: "14px" }}>No approved tools found in database.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {approvedTools.map((tool) => (
+                  <div key={tool.id} style={{ border: "1px solid #e2e8f0", padding: "20px", borderRadius: "12px", backgroundColor: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "20px" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
+                        <span style={{ backgroundColor: "#e0f2fe", color: "#0369a1", fontSize: "11px", fontWeight: "bold", padding: "2px 8px", borderRadius: "4px" }}>{tool.category}</span>
+                        <span style={{ backgroundColor: "#dcfce7", color: "#15803d", fontSize: "11px", fontWeight: "bold", padding: "2px 8px", borderRadius: "4px" }}>Approved</span>
+                        <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "bold" }}>{tool.name}</h3>
+                      </div>
+                      <p style={{ margin: "4px 0", fontSize: "14px", color: "#334155" }}>{tool.description}</p>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                      <button onClick={() => handleApproveTool(tool.id)} style={{ backgroundColor: "#16a34a", color: "#ffffff", border: "none", padding: "8px 12px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", fontSize: "12px" }}>
+                        Re-Approve
+                      </button>
+                      <button onClick={() => handleSetPendingTool(tool.id)} style={{ backgroundColor: "#d97706", color: "#ffffff", border: "none", padding: "8px 12px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", fontSize: "12px" }}>
+                        Move to Pending
+                      </button>
+                      <button onClick={() => handleDeleteTool(tool.id)} style={{ backgroundColor: "#dc2626", color: "#ffffff", border: "none", padding: "8px 12px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", fontSize: "12px" }}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: PENDING TOOLS QUEUE */}
+        {activeTab === "pending-tools" && (
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", border: "1px solid #e0f2fe", padding: "32px" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: "800", marginBottom: "16px" }}>Pending AI Tool Audits ({pendingTools.length})</h2>
+            {pendingTools.length === 0 ? (
+              <p style={{ color: "#64748b", fontSize: "14px" }}>No pending tool submissions requiring review.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {pendingTools.map((tool) => (
+                  <div key={tool.id} style={{ border: "1px solid #e2e8f0", padding: "20px", borderRadius: "12px", backgroundColor: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "start", gap: "20px" }}>
+                    <div>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
+                        <span style={{ backgroundColor: "#e0f2fe", color: "#0369a1", fontSize: "11px", fontWeight: "bold", padding: "2px 8px", borderRadius: "4px" }}>{tool.category}</span>
+                        <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "bold" }}>{tool.name}</h3>
+                      </div>
+                      <p style={{ margin: "4px 0 8px 0", fontSize: "14px", color: "#334155" }}>{tool.description}</p>
+                      <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>URL: {tool.url || 'N/A'} | Submitter: {tool.submitter_email || 'Public Form'}</p>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button onClick={() => handleApproveTool(tool.id)} style={{ backgroundColor: "#16a34a", color: "#ffffff", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", fontSize: "13px" }}>Approve & Publish</button>
+                      <button onClick={() => handleDeleteTool(tool.id)} style={{ backgroundColor: "#dc2626", color: "#ffffff", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", fontSize: "13px" }}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: PENDING GUEST ARTICLES */}
+        {activeTab === "pending-posts" && (
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", border: "1px solid #e0f2fe", padding: "32px" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: "800", marginBottom: "16px" }}>Pending Guest Articles & Case Studies ({pendingPosts.length})</h2>
+            {pendingPosts.length === 0 ? (
+              <p style={{ color: "#64748b", fontSize: "14px" }}>No pending guest articles requiring review.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {pendingPosts.map((post) => (
+                  <div key={post.id} style={{ border: "1px solid #e2e8f0", padding: "20px", borderRadius: "12px", backgroundColor: "#f8fafc" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "12px" }}>
+                      <div>
+                        <span style={{ backgroundColor: "#e0f2fe", color: "#0369a1", fontSize: "11px", fontWeight: "bold", padding: "2px 8px", borderRadius: "4px" }}>{post.category}</span>
+                        <h3 style={{ margin: "6px 0 2px 0", fontSize: "18px", fontWeight: "bold" }}>{post.title}</h3>
+                        <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>By {post.author} ({post.author_email})</p>
+                      </div>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button onClick={() => handleApprovePost(post.id)} style={{ backgroundColor: "#16a34a", color: "#ffffff", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", fontSize: "13px" }}>Approve & Publish</button>
+                        <button onClick={() => handleRejectPost(post.id)} style={{ backgroundColor: "#dc2626", color: "#ffffff", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", fontSize: "13px" }}>Reject</button>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: "13px", fontWeight: "bold", color: "#334155", marginBottom: "8px" }}>Excerpt: {post.excerpt}</p>
+                    <div style={{ fontSize: "13px", color: "#475569", backgroundColor: "#ffffff", padding: "12px", borderRadius: "6px", border: "1px solid #e2e8f0", maxHeight: "150px", overflowY: "auto", whiteSpace: "pre-line" }}>
+                      {post.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: DIRECT ADMIN ARTICLE CREATOR */}
+        {activeTab === "new-post" && (
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", border: "1px solid #e0f2fe", padding: "32px" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: "800", marginBottom: "20px" }}>Publish Direct Admin Article</h2>
+            <form onSubmit={handleDirectPublish} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "6px" }}>Article Title *</label>
+                <input type="text" required placeholder="Title..." value={postData.title} onChange={(e) => setPostData({ ...postData, title: e.target.value })} style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #bae6fd", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "6px" }}>Slug *</label>
+                  <input type="text" required placeholder="article-slug" value={postData.slug} onChange={(e) => setPostData({ ...postData, slug: e.target.value })} style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #bae6fd", boxSizing: "border-box" }} />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "6px" }}>Category *</label>
+                  <select value={postData.category} onChange={(e) => setPostData({ ...postData, category: e.target.value })} style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #bae6fd", boxSizing: "border-box" }}>
+                    <option value="Compliance & Security">Compliance & Security</option>
+                    <option value="Regulatory Insights">Regulatory Insights</option>
+                    <option value="Case Studies">Case Studies</option>
+                    <option value="Product Spotlights">Product Spotlights</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "6px" }}>Excerpt *</label>
+                <textarea required rows={2} value={postData.excerpt} onChange={(e) => setPostData({ ...postData, excerpt: e.target.value })} style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #bae6fd", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "6px" }}>Full Content *</label>
+                <textarea required rows={8} value={postData.content} onChange={(e) => setPostData({ ...postData, content: e.target.value })} style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #bae6fd", boxSizing: "border-box", fontFamily: "sans-serif" }} />
+              </div>
+              <button type="submit" style={{ backgroundColor: "#0284c7", color: "#ffffff", border: "none", padding: "12px", borderRadius: "8px", fontWeight: "bold", fontSize: "15px", cursor: "pointer" }}>Publish Article Live</button>
+            </form>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
