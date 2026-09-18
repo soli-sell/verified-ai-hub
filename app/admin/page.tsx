@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   const [activeTools, setActiveTools] = useState<any[]>([]);
   const [guestArticles, setGuestArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const ADMIN_SECRET = "verified2026";
 
@@ -32,30 +33,40 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     setLoading(true);
+    setErrorMessage("");
     
     // 1. Fetch pending submissions
-    const { data: pending } = await supabase
+    const { data: pending, error: pErr } = await supabase
       .from("tools")
       .select("*")
       .eq("status", "pending")
       .order("id", { ascending: false });
+      
+    if (pErr) console.error("Pending tools error:", pErr);
     setPendingTools(pending || []);
 
-    // 2. Fetch ALL tools directly without complex OR conditions
-    const { data: allTools } = await supabase
+    // 2. Fetch ALL tools directly
+    const { data: allTools, error: tErr } = await supabase
       .from("tools")
       .select("*")
       .order("id", { ascending: true });
-    
-    // Filter out items marked as 'pending' for the Active card
-    const reviewed = (allTools || []).filter((t: any) => t.status !== "pending");
-    setActiveTools(reviewed);
+
+    if (tErr) {
+      console.error("All tools fetch error:", tErr);
+      setErrorMessage(`Supabase Error: ${tErr.message}`);
+    } else {
+      console.log("Fetched tools successfully:", allTools);
+      const reviewed = (allTools || []).filter((t: any) => t.status !== "pending");
+      setActiveTools(reviewed);
+    }
 
     // 3. Fetch guest articles / claims queue
-    const { data: claims } = await supabase
+    const { data: claims, error: cErr } = await supabase
       .from("claims")
       .select("*")
       .order("id", { ascending: false });
+      
+    if (cErr) console.error("Claims fetch error:", cErr);
     setGuestArticles(claims || []);
 
     setLoading(false);
@@ -108,6 +119,12 @@ export default function AdminDashboard() {
 
       <main style={{ maxWidth: "1100px", margin: "32px auto 0 auto", padding: "0 20px" }}>
         
+        {errorMessage && (
+          <div style={{ backgroundColor: "#fee2e2", color: "#b91c1c", padding: "12px 16px", borderRadius: "8px", marginBottom: "20px", fontWeight: "bold", fontSize: "14px" }}>
+            {errorMessage}
+          </div>
+        )}
+
         {/* Guest Articles & Inquiries Box */}
         <section style={{ backgroundColor: "#ffffff", borderRadius: "12px", padding: "28px", marginBottom: "28px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: guestArticles.length > 0 ? "20px" : "0" }}>
@@ -205,50 +222,56 @@ export default function AdminDashboard() {
             </span>
           </div>
 
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-            <thead>
-              <tr style={{ color: "#64748b", fontSize: "11px", fontWeight: "bold", borderBottom: "1px solid #f1f5f9", textTransform: "uppercase" }}>
-                <th style={{ padding: "12px", width: "35%" }}>Tool Name</th>
-                <th style={{ padding: "12px" }}>Category</th>
-                <th style={{ padding: "12px" }}>Status</th>
-                <th style={{ padding: "12px" }}>Badges</th>
-                <th style={{ padding: "12px", textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeTools.map((tool) => (
-                <tr key={tool.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "16px 12px" }}>
-                    <div style={{ fontWeight: "bold", color: "#0f172a", fontSize: "14px" }}>{tool.name}</div>
-                    <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>{tool.description}</div>
-                  </td>
-                  <td style={{ padding: "16px 12px", fontSize: "13px", color: "#334155" }}>{tool.category || "Healthcare"}</td>
-                  <td style={{ padding: "16px 12px" }}>
-                    <span style={{ backgroundColor: tool.status === "rejected" ? "#fee2e2" : "#dcfce7", color: tool.status === "rejected" ? "#b91c1c" : "#15803d", padding: "3px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: "bold", textTransform: "uppercase" }}>
-                      {tool.status ? tool.status.toUpperCase() : "APPROVED"}
-                    </span>
-                  </td>
-                  <td style={{ padding: "16px 12px" }}>
-                    <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                      <span style={{ backgroundColor: "#f1f5f9", color: "#475569", fontSize: "10px", fontWeight: "bold", padding: "2px 6px", borderRadius: "4px" }}>HIPAA</span>
-                      <span style={{ backgroundColor: "#f1f5f9", color: "#475569", fontSize: "10px", fontWeight: "bold", padding: "2px 6px", borderRadius: "4px" }}>SOC2</span>
-                      {tool.name !== "BioGPT Clinical" && (
-                        <span style={{ backgroundColor: "#f1f5f9", color: "#475569", fontSize: "10px", fontWeight: "bold", padding: "2px 6px", borderRadius: "4px" }}>FDA</span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ padding: "16px 12px", textAlign: "right" }}>
-                    <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end", alignItems: "center" }}>
-                      <a href={tool.url || "#"} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", fontSize: "12px", fontWeight: "bold", textDecoration: "none", marginRight: "4px" }}>Visit ↗</a>
-                      <button onClick={() => updateToolStatus(tool.id, "approved")} style={{ backgroundColor: "#16a34a", color: "#fff", border: "none", padding: "5px 10px", borderRadius: "6px", fontWeight: "bold", fontSize: "11px", cursor: "pointer" }}>Re-approve</button>
-                      <button onClick={() => updateToolStatus(tool.id, "pending")} style={{ backgroundColor: "#d97706", color: "#fff", border: "none", padding: "5px 10px", borderRadius: "6px", fontWeight: "bold", fontSize: "11px", cursor: "pointer" }}>Pending</button>
-                      <button onClick={() => deleteTool(tool.id)} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "5px 10px", borderRadius: "6px", fontWeight: "bold", fontSize: "11px", cursor: "pointer" }}>Delete</button>
-                    </div>
-                  </td>
+          {activeTools.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "20px 0", color: "#64748b", fontSize: "14px" }}>
+              No active listings found in database.
+            </div>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <thead>
+                <tr style={{ color: "#64748b", fontSize: "11px", fontWeight: "bold", borderBottom: "1px solid #f1f5f9", textTransform: "uppercase" }}>
+                  <th style={{ padding: "12px", width: "35%" }}>Tool Name</th>
+                  <th style={{ padding: "12px" }}>Category</th>
+                  <th style={{ padding: "12px" }}>Status</th>
+                  <th style={{ padding: "12px" }}>Badges</th>
+                  <th style={{ padding: "12px", textAlign: "right" }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {activeTools.map((tool) => (
+                  <tr key={tool.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "16px 12px" }}>
+                      <div style={{ fontWeight: "bold", color: "#0f172a", fontSize: "14px" }}>{tool.name}</div>
+                      <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>{tool.description}</div>
+                    </td>
+                    <td style={{ padding: "16px 12px", fontSize: "13px", color: "#334155" }}>{tool.category || "Healthcare"}</td>
+                    <td style={{ padding: "16px 12px" }}>
+                      <span style={{ backgroundColor: tool.status === "rejected" ? "#fee2e2" : "#dcfce7", color: tool.status === "rejected" ? "#b91c1c" : "#15803d", padding: "3px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: "bold", textTransform: "uppercase" }}>
+                        {tool.status ? tool.status.toUpperCase() : "APPROVED"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "16px 12px" }}>
+                      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                        <span style={{ backgroundColor: "#f1f5f9", color: "#475569", fontSize: "10px", fontWeight: "bold", padding: "2px 6px", borderRadius: "4px" }}>HIPAA</span>
+                        <span style={{ backgroundColor: "#f1f5f9", color: "#475569", fontSize: "10px", fontWeight: "bold", padding: "2px 6px", borderRadius: "4px" }}>SOC2</span>
+                        {tool.name !== "BioGPT Clinical" && (
+                          <span style={{ backgroundColor: "#f1f5f9", color: "#475569", fontSize: "10px", fontWeight: "bold", padding: "2px 6px", borderRadius: "4px" }}>FDA</span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ padding: "16px 12px", textAlign: "right" }}>
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end", alignItems: "center" }}>
+                        <a href={tool.url || "#"} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", fontSize: "12px", fontWeight: "bold", textDecoration: "none", marginRight: "4px" }}>Visit ↗</a>
+                        <button onClick={() => updateToolStatus(tool.id, "approved")} style={{ backgroundColor: "#16a34a", color: "#fff", border: "none", padding: "5px 10px", borderRadius: "6px", fontWeight: "bold", fontSize: "11px", cursor: "pointer" }}>Re-approve</button>
+                        <button onClick={() => updateToolStatus(tool.id, "pending")} style={{ backgroundColor: "#d97706", color: "#fff", border: "none", padding: "5px 10px", borderRadius: "6px", fontWeight: "bold", fontSize: "11px", cursor: "pointer" }}>Pending</button>
+                        <button onClick={() => deleteTool(tool.id)} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "5px 10px", borderRadius: "6px", fontWeight: "bold", fontSize: "11px", cursor: "pointer" }}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </section>
       </main>
     </div>
