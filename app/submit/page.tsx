@@ -50,6 +50,7 @@ export default function SubmitTool() {
         name: formData.name,
         category: formData.category,
         description: formData.description,
+        pricing: formData.pricing || "Contact for Pricing",
         url: formattedUrl,
         submitter_email: formData.submitter_email,
         compliance: selectedCompliance,
