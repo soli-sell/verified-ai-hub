@@ -124,7 +124,15 @@ export default function SubmitTool() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "6px" }}>Primary Category *</label>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "6px" }}>Pricing Model</label>
+            <select value={formData.pricing || "Contact for Pricing"} onChange={(e) => setFormData({ ...formData, pricing: e.target.value })} style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #bae6fd", fontSize: "14px", boxSizing: "border-box", marginBottom: "16px" }}>
+              <option value="Contact for Pricing">Contact for Pricing</option>
+              <option value="Free">Free</option>
+              <option value="Freemium">Freemium</option>
+              <option value="Paid">Paid</option>
+              <option value="Enterprise">Enterprise</option>
+            </select>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "6px" }}>Primary Category *</label>
                 <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #bae6fd", fontSize: "14px", boxSizing: "border-box" }}>
                   {CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
