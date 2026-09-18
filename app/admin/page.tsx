@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
+import Link from "next/link";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -12,56 +13,60 @@ export default function AdminDashboard() {
   const [authenticated, setAuthenticated] = useState(false);
   const [passcode, setPasscode] = useState("");
   
-  const [pendingReviews, setPendingReviews] = useState<any[]>([]);
-  const [pendingClaims, setPendingClaims] = useState<any[]>([]);
+  const [pendingTools, setPendingTools] = useState<any[]>([]);
+  const [activeTools, setActiveTools] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const ADMIN_SECRET = "verified2026"; // Passcode for admin access
+  const ADMIN_SECRET = "verified2026";
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (passcode === ADMIN_SECRET) {
       setAuthenticated(true);
-      fetchAdminData();
+      fetchData();
     } else {
       alert("Invalid Passcode");
     }
   };
 
-  const fetchAdminData = async () => {
+  const fetchData = async () => {
     setLoading(true);
     
-    // Fetch pending reviews
-    const { data: reviews } = await supabase
-      .from("reviews")
+    // Fetch pending submissions
+    const { data: pending } = await supabase
+      .from("tools")
       .select("*")
-      .eq("status", "pending");
-    setPendingReviews(reviews || []);
+      .eq("status", "pending")
+      .order("id", { ascending: false });
+    setPendingTools(pending || []);
 
-    // Fetch pending claims
-    const { data: claims } = await supabase
-      .from("claims")
+    // Fetch active/reviewed tools
+    const { data: active } = await supabase
+      .from("tools")
       .select("*")
-      .eq("status", "pending");
-    setPendingClaims(claims || []);
+      .neq("status", "pending")
+      .order("id", { ascending: false });
+    setActiveTools(active || []);
 
     setLoading(false);
   };
 
-  const updateStatus = async (table: string, id: number, status: string) => {
-    await supabase.from(table).update({ status }).eq("id", id);
-    fetchAdminData();
+  const updateStatus = async (id: number, status: string) => {
+    await supabase.from("tools").update({ status }).eq("id", id);
+    fetchData();
   };
 
-  const deleteRecord = async (table: string, id: number) => {
-    await supabase.from(table).delete().eq("id", id);
-    fetchAdminData();
+  const deleteTool = async (id: number) => {
+    if (confirm("Are you sure you want to delete this listing?")) {
+      await supabase.from("tools").delete().eq("id", id);
+      fetchData();
+    }
   };
 
   if (!authenticated) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "#f8fafc", fontFamily: "sans-serif" }}>
-        <form onSubmit={handleLogin} style={{ backgroundColor: "#ffffff", padding: "32px", borderRadius: "12px", border: "1px solid #e2e8f0", width: "320px", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "#e2e8f0", fontFamily: "sans-serif" }}>
+        <form onSubmit={handleLogin} style={{ backgroundColor: "#ffffff", padding: "32px", borderRadius: "12px", width: "320px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)" }}>
           <h2 style={{ fontSize: "20px", fontWeight: "bold", marginBottom: "16px", color: "#0f172a" }}>Admin Access</h2>
           <input
             type="password"
@@ -70,7 +75,7 @@ export default function AdminDashboard() {
             onChange={(e) => setPasscode(e.target.value)}
             style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1", marginBottom: "16px", boxSizing: "border-box" }}
           />
-          <button type="submit" style={{ width: "100%", backgroundColor: "#0284c7", color: "#ffffff", border: "none", padding: "10px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer" }}>
+          <button type="submit" style={{ width: "100%", backgroundColor: "#1d4ed8", color: "#ffffff", border: "none", padding: "10px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer" }}>
             Login
           </button>
         </form>
@@ -79,77 +84,120 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div style={{ padding: "40px", maxWidth: "1000px", margin: "0 auto", fontFamily: "sans-serif", backgroundColor: "#ffffff" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
-        <h1 style={{ fontSize: "28px", fontWeight: "bold", color: "#0f172a" }}>Verified AI Hub — Admin Panel</h1>
-        <button onClick={fetchAdminData} style={{ backgroundColor: "#f1f5f9", border: "1px solid #cbd5e1", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
-          Refresh Data
-        </button>
-      </div>
+    <div style={{ minHeight: "100vh", backgroundColor: "#dbece9", fontFamily: "sans-serif", paddingBottom: "60px" }}>
+      {/* Top Header Banner */}
+      <header style={{ backgroundColor: "#1e40af", padding: "14px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ backgroundColor: "#ffffff", color: "#1e40af", fontWeight: "bold", padding: "2px 8px", borderRadius: "4px", fontSize: "14px" }}>V</div>
+          <span style={{ color: "#ffffff", fontWeight: "bold", fontSize: "16px" }}>VerifiedAIHub — Admin Panel</span>
+        </div>
+        <Link href="/" style={{ color: "#ffffff", textDecoration: "none", fontSize: "13px", fontWeight: "600" }}>
+          ← Back to Homepage
+        </Link>
+      </header>
 
-      {loading ? <p>Loading admin records...</p> : (
-        <>
-          {/* PENDING REVIEWS */}
-          <section style={{ marginBottom: "40px" }}>
-            <h2 style={{ fontSize: "20px", fontWeight: "bold", color: "#334155", marginBottom: "16px" }}>Pending Reviews ({pendingReviews.length})</h2>
-            {pendingReviews.length === 0 ? <p style={{ color: "#64748b", fontStyle: "italic" }}>No pending reviews.</p> : (
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-                <thead>
-                  <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                    <th style={{ padding: "12px" }}>Tool ID</th>
-                    <th style={{ padding: "12px" }}>Rating</th>
-                    <th style={{ padding: "12px" }}>Comment</th>
-                    <th style={{ padding: "12px" }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingReviews.map((rev) => (
-                    <tr key={rev.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                      <td style={{ padding: "12px" }}>{rev.tool_id}</td>
-                      <td style={{ padding: "12px" }}>{"⭐".repeat(rev.rating || 5)}</td>
-                      <td style={{ padding: "12px" }}>{rev.comment}</td>
-                      <td style={{ padding: "12px", display: "flex", gap: "8px" }}>
-                        <button onClick={() => updateStatus("reviews", rev.id, "approved")} style={{ backgroundColor: "#16a34a", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", cursor: "pointer" }}>Approve</button>
-                        <button onClick={() => deleteRecord("reviews", rev.id)} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", cursor: "pointer" }}>Reject</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </section>
+      <main style={{ maxWidth: "1100px", margin: "32px auto 0 auto", padding: "0 20px" }}>
+        {/* Pending Submissions Queue Card */}
+        <section style={{ backgroundColor: "#ffffff", borderRadius: "12px", padding: "28px", marginBottom: "28px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: pendingTools.length > 0 ? "20px" : "0" }}>
+            <h2 style={{ fontSize: "18px", fontWeight: "bold", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+              ⏳ Pending Submissions Queue
+            </h2>
+            <span style={{ backgroundColor: "#ffedd5", color: "#c2410c", padding: "4px 12px", borderRadius: "16px", fontSize: "12px", fontWeight: "bold" }}>
+              Pending: {pendingTools.length}
+            </span>
+          </div>
 
-          {/* PENDING CLAIMS */}
-          <section style={{ marginBottom: "40px" }}>
-            <h2 style={{ fontSize: "20px", fontWeight: "bold", color: "#334155", marginBottom: "16px" }}>Pending Claims ({pendingClaims.length})</h2>
-            {pendingClaims.length === 0 ? <p style={{ color: "#64748b", fontStyle: "italic" }}>No pending claims.</p> : (
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-                <thead>
-                  <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                    <th style={{ padding: "12px" }}>Tool ID</th>
-                    <th style={{ padding: "12px" }}>Tool Name</th>
-                    <th style={{ padding: "12px" }}>Email</th>
-                    <th style={{ padding: "12px" }}>Actions</th>
+          {pendingTools.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "32px 0", color: "#64748b", fontSize: "14px" }}>
+              No new submissions awaiting review.
+            </div>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <thead>
+                <tr style={{ color: "#64748b", fontSize: "11px", fontWeight: "bold", borderBottom: "1px solid #f1f5f9", textTransform: "uppercase" }}>
+                  <th style={{ padding: "12px" }}>Tool Name</th>
+                  <th style={{ padding: "12px" }}>Category</th>
+                  <th style={{ padding: "12px" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingTools.map((tool) => (
+                  <tr key={tool.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "16px 12px" }}>
+                      <div style={{ fontWeight: "bold", color: "#0f172a" }}>{tool.name}</div>
+                      <div style={{ fontSize: "12px", color: "#64748b" }}>{tool.description}</div>
+                    </td>
+                    <td style={{ padding: "16px 12px", fontSize: "13px", color: "#334155" }}>{tool.category || "Healthcare"}</td>
+                    <td style={{ padding: "16px 12px" }}>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button onClick={() => updateStatus(tool.id, "approved")} style={{ backgroundColor: "#16a34a", color: "#fff", border: "none", padding: "6px 14px", borderRadius: "6px", fontWeight: "bold", fontSize: "12px", cursor: "pointer" }}>Approve</button>
+                        <button onClick={() => updateStatus(tool.id, "rejected")} style={{ backgroundColor: "#ea580c", color: "#fff", border: "none", padding: "6px 14px", borderRadius: "6px", fontWeight: "bold", fontSize: "12px", cursor: "pointer" }}>Reject</button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {pendingClaims.map((claim) => (
-                    <tr key={claim.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                      <td style={{ padding: "12px" }}>{claim.tool_id}</td>
-                      <td style={{ padding: "12px" }}>{claim.tool_name}</td>
-                      <td style={{ padding: "12px" }}>{claim.email}</td>
-                      <td style={{ padding: "12px", display: "flex", gap: "8px" }}>
-                        <button onClick={() => updateStatus("claims", claim.id, "approved")} style={{ backgroundColor: "#16a34a", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", cursor: "pointer" }}>Approve</button>
-                        <button onClick={() => deleteRecord("claims", claim.id)} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", cursor: "pointer" }}>Reject</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </section>
-        </>
-      )}
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        {/* Active & Reviewed Listings Card */}
+        <section style={{ backgroundColor: "#ffffff", borderRadius: "12px", padding: "28px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <h2 style={{ fontSize: "18px", fontWeight: "bold", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+              📄 Active & Reviewed Listings
+            </h2>
+            <span style={{ backgroundColor: "#dbeafe", color: "#1e40af", padding: "4px 12px", borderRadius: "16px", fontSize: "12px", fontWeight: "bold" }}>
+              Total Reviewed: {activeTools.length}
+            </span>
+          </div>
+
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+            <thead>
+              <tr style={{ color: "#64748b", fontSize: "11px", fontWeight: "bold", borderBottom: "1px solid #f1f5f9", textTransform: "uppercase" }}>
+                <th style={{ padding: "12px", width: "35%" }}>Tool Name</th>
+                <th style={{ padding: "12px" }}>Category</th>
+                <th style={{ padding: "12px" }}>Status</th>
+                <th style={{ padding: "12px" }}>Badges</th>
+                <th style={{ padding: "12px", textAlign: "right" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {activeTools.map((tool) => (
+                <tr key={tool.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "16px 12px" }}>
+                    <div style={{ fontWeight: "bold", color: "#0f172a", fontSize: "14px" }}>{tool.name}</div>
+                    <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>{tool.description}</div>
+                  </td>
+                  <td style={{ padding: "16px 12px", fontSize: "13px", color: "#334155" }}>{tool.category || "Healthcare"}</td>
+                  <td style={{ padding: "16px 12px" }}>
+                    <span style={{ backgroundColor: tool.status === "approved" ? "#dcfce7" : "#fee2e2", color: tool.status === "approved" ? "#15803d" : "#b91c1c", padding: "3px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: "bold", textTransform: "uppercase" }}>
+                      {tool.status || "APPROVED"}
+                    </span>
+                  </td>
+                  <td style={{ padding: "16px 12px" }}>
+                    <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                      <span style={{ backgroundColor: "#f1f5f9", color: "#475569", fontSize: "10px", fontWeight: "bold", padding: "2px 6px", borderRadius: "4px" }}>HIPAA</span>
+                      <span style={{ backgroundColor: "#f1f5f9", color: "#475569", fontSize: "10px", fontWeight: "bold", padding: "2px 6px", borderRadius: "4px" }}>SOC2</span>
+                      {tool.name !== "BioGPT Clinical" && (
+                        <span style={{ backgroundColor: "#f1f5f9", color: "#475569", fontSize: "10px", fontWeight: "bold", padding: "2px 6px", borderRadius: "4px" }}>FDA</span>
+                      )}
+                    </div>
+                  </td>
+                  <td style={{ padding: "16px 12px", textAlign: "right" }}>
+                    <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", alignItems: "center" }}>
+                      <a href={tool.url || "#"} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", fontSize: "12px", fontWeight: "bold", textDecoration: "none", marginRight: "4px" }}>Visit ↗</a>
+                      <button onClick={() => updateStatus(tool.id, "rejected")} style={{ backgroundColor: "#ea580c", color: "#fff", border: "none", padding: "5px 12px", borderRadius: "6px", fontWeight: "bold", fontSize: "11px", cursor: "pointer" }}>Reject</button>
+                      <button onClick={() => deleteTool(tool.id)} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "5px 12px", borderRadius: "6px", fontWeight: "bold", fontSize: "11px", cursor: "pointer" }}>Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </main>
     </div>
   );
 }
