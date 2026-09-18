@@ -50,6 +50,7 @@ export default function Home() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewStatus, setReviewStatus] = useState<"idle" | "success">("idle");
+  const [fetchedReviews, setFetchedReviews] = useState<any[]>([]);
 
   // Contact Form State
   const [contactData, setContactData] = useState({ name: "", email: "", subject: "General Inquiry", message: "" });
@@ -78,6 +79,17 @@ export default function Home() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (selectedTool) {
+      supabase
+        .from("reviews")
+        .select("*")
+        .eq("tool_id", selectedTool.id)
+        .eq("status", "approved")
+        .then(({ data }) => setFetchedReviews(data || []));
+    }
+  }, [selectedTool]);
 
   useEffect(() => {
     fetchTools();
