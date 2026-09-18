@@ -4,9 +4,13 @@ import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 
+// Clean base URL to prevent "Invalid path specified in request URL"
+const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim().replace(/\/+$/, "");
+const supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
+
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+  supabaseUrl,
+  supabaseAnonKey
 );
 
 export default function AdminDashboard() {
@@ -35,41 +39,40 @@ export default function AdminDashboard() {
     setLoading(true);
     setErrorMessage("");
     
-    // 1. Fetch pending submissions
-    const { data: pending, error: pErr } = await supabase
-      .from("tools")
-      .select("*")
-      .eq("status", "pending")
-      .order("id", { ascending: false });
-      
-    if (pErr) console.error("Pending tools error:", pErr);
-    setPendingTools(pending || []);
+    try {
+      // 1. Fetch pending submissions
+      const { data: pending, error: pErr } = await supabase
+        .from("tools")
+        .select("*")
+        .eq("status", "pending");
+      if (pErr) console.error("Pending tools error:", pErr);
+      setPendingTools(pending || []);
 
-    // 2. Fetch ALL tools directly
-    const { data: allTools, error: tErr } = await supabase
-      .from("tools")
-      .select("*")
-      .order("id", { ascending: true });
+      // 2. Fetch all tools
+      const { data: allTools, error: tErr } = await supabase
+        .from("tools")
+        .select("*");
 
-    if (tErr) {
-      console.error("All tools fetch error:", tErr);
-      setErrorMessage(`Supabase Error: ${tErr.message}`);
-    } else {
-      console.log("Fetched tools successfully:", allTools);
-      const reviewed = (allTools || []).filter((t: any) => t.status !== "pending");
-      setActiveTools(reviewed);
+      if (tErr) {
+        console.error("All tools fetch error:", tErr);
+        setErrorMessage(`Supabase Error: ${tErr.message}`);
+      } else {
+        const reviewed = (allTools || []).filter((t: any) => t.status !== "pending");
+        setActiveTools(reviewed);
+      }
+
+      // 3. Fetch claims queue
+      const { data: claims, error: cErr } = await supabase
+        .from("claims")
+        .select("*");
+      if (cErr) console.error("Claims fetch error:", cErr);
+      setGuestArticles(claims || []);
+
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to fetch database records.");
+    } finally {
+      setLoading(false);
     }
-
-    // 3. Fetch guest articles / claims queue
-    const { data: claims, error: cErr } = await supabase
-      .from("claims")
-      .select("*")
-      .order("id", { ascending: false });
-      
-    if (cErr) console.error("Claims fetch error:", cErr);
-    setGuestArticles(claims || []);
-
-    setLoading(false);
   };
 
   const updateToolStatus = async (id: number, status: string) => {
