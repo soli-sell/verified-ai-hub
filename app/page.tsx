@@ -394,9 +394,22 @@ export default function Home() {
                 </form>
               )}
 
-              <div style={{ backgroundColor: "#f1f5f9", padding: "12px 16px", borderRadius: "8px" }}>
-                <p style={{ margin: "0 0 4px 0", fontSize: "13px", fontWeight: "bold", color: "#334155" }}>Verified Health System IT Lead ⭐⭐⭐⭐⭐</p>
-                <p style={{ margin: 0, fontSize: "13px", color: "#475569" }}>"Rigorously audited HIPAA endpoints. Smooth EHR integration across our clinical department."</p>
+              {/* DYNAMIC REVIEWS LIST */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" }}>
+                {fetchedReviews.length === 0 ? (
+                  <p style={{ fontSize: "13px", color: "#64748b", fontStyle: "italic", margin: 0 }}>
+                    No public reviews approved yet for this tool.
+                  </p>
+                ) : (
+                  fetchedReviews.map((rev: any) => (
+                    <div key={rev.id} style={{ backgroundColor: "#f1f5f9", padding: "12px 16px", borderRadius: "8px" }}>
+                      <p style={{ margin: "0 0 4px 0", fontSize: "13px", fontWeight: "bold", color: "#334155" }}>
+                        Verified Healthcare Reviewer {"⭐".repeat(rev.rating || 5)}
+                      </p>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#475569" }}>"{rev.comment}"</p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
