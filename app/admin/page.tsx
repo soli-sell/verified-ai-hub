@@ -41,13 +41,15 @@ export default function AdminDashboard() {
       .order("id", { ascending: false });
     setPendingTools(pending || []);
 
-    // 2. Fetch all active/reviewed listings (status is null, approved, or anything except pending)
+    // 2. Fetch ALL tools directly without complex OR conditions
     const { data: allTools } = await supabase
       .from("tools")
       .select("*")
-      .or("status.is.null,status.neq.pending")
       .order("id", { ascending: true });
-    setActiveTools(allTools || []);
+    
+    // Filter out items marked as 'pending' for the Active card
+    const reviewed = (allTools || []).filter((t: any) => t.status !== "pending");
+    setActiveTools(reviewed);
 
     // 3. Fetch guest articles / claims queue
     const { data: claims } = await supabase
