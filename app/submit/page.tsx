@@ -18,7 +18,7 @@ export default function SubmitTool() {
     category: "Healthcare",
     description: "",
     url: "",
-    submitter_email: "",
+    submitter_email: "", pricing: "Contact for Pricing",
   });
 
   const [selectedCompliance, setSelectedCompliance] = useState<string[]>([]);
