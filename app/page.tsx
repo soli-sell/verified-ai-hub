@@ -92,17 +92,23 @@ export default function Home() {
     };
   }, []);
 
-  const handleClaimSubmit = (e: React.FormEvent) => {
+  const handleClaimSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setClaimStatus("submitting");
-    setTimeout(() => {
-      setClaimStatus("success");
-    }, 800);
+    await supabase.from("claims").insert([
+      { tool_id: selectedTool?.id, tool_name: selectedTool?.name, email: claimEmail }
+    ]);
+    setClaimStatus("success");
+    setClaimEmail("");
   };
 
-  const handleReviewSubmit = (e: React.FormEvent) => {
+  const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    await supabase.from("reviews").insert([
+      { tool_id: selectedTool?.id, tool_name: selectedTool?.name, rating: reviewRating, comment: reviewComment, status: "pending" }
+    ]);
     setReviewStatus("success");
+    setReviewComment("");
   };
 
   const handleContactSubmit = async (e: React.FormEvent) => {
