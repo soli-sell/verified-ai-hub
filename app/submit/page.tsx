@@ -133,9 +133,20 @@ export default function SubmitTool() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "6px" }}>Official Website URL *</label>
-                <input type="text" required placeholder="https://company.com" value={formData.url} onChange={(e) => setFormData({ ...formData, url: e.target.value })} style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #bae6fd", fontSize: "14px", boxSizing: "border-box" }} />
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "6px" }}>Pricing Model</label>
+                <select value={formData.pricing || "Contact for Pricing"} onChange={(e) => setFormData({ ...formData, pricing: e.target.value })} style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #bae6fd", fontSize: "14px", boxSizing: "border-box" }}>
+                  <option value="Contact for Pricing">Contact for Pricing</option>
+                  <option value="Free">Free</option>
+                  <option value="Freemium">Freemium</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Enterprise">Enterprise</option>
+                </select>
               </div>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", marginBottom: "6px" }}>Official Website URL *</label>
+              <input type="text" required placeholder="https://company.com" value={formData.url} onChange={(e) => setFormData({ ...formData, url: e.target.value })} style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #bae6fd", fontSize: "14px", boxSizing: "border-box" }} />
             </div>
 
             <div>
