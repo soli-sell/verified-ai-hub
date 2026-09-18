@@ -51,6 +51,7 @@ export default function Home() {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewStatus, setReviewStatus] = useState<"idle" | "success">("idle");
   const [fetchedReviews, setFetchedReviews] = useState<any[]>([]);
+  const [approvedClaimToolIds, setApprovedClaimToolIds] = useState<number[]>([]);
 
   // Contact Form State
   const [contactData, setContactData] = useState({ name: "", email: "", subject: "General Inquiry", message: "" });
@@ -93,6 +94,13 @@ export default function Home() {
 
   useEffect(() => {
     fetchTools();
+    supabase
+      .from("claims")
+      .select("tool_id")
+      .eq("status", "approved")
+      .then(({ data }) => {
+        if (data) setApprovedClaimToolIds(data.map((c: any) => Number(c.tool_id)));
+      });
 
     const channel = supabase
       .channel("public:tools")
@@ -304,7 +312,14 @@ export default function Home() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "16px" }}>
               <div>
                 <span style={{ backgroundColor: "#e0f2fe", color: "#0369a1", fontSize: "12px", fontWeight: "bold", padding: "4px 10px", borderRadius: "6px" }}>{selectedTool.category}</span>
-                <h2 style={{ fontSize: "28px", fontWeight: "800", color: "#0f172a", margin: "8px 0 4px 0" }}>{selectedTool.name}</h2>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px" }}>
+                  <h2 style={{ fontSize: "28px", fontWeight: "800", color: "#0f172a", margin: 0 }}>{selectedTool.name}</h2>
+                  {approvedClaimToolIds.includes(Number(selectedTool.id)) && (
+                    <span style={{ backgroundColor: "#fef3c7", color: "#d97706", border: "1px solid #fde68a", fontSize: "12px", fontWeight: "bold", padding: "3px 10px", borderRadius: "12px" }}>
+                      ✓ Gold Verified
+                    </span>
+                  )}
+                </div>
               </div>
               <a href={formatExternalUrl(selectedTool.name, selectedTool.url)} target="_blank" rel="noopener noreferrer" style={{ backgroundColor: "#0284c7", color: "#ffffff", padding: "10px 18px", borderRadius: "8px", textDecoration: "none", fontWeight: "bold", fontSize: "14px" }}>
                 Visit Website ↗
