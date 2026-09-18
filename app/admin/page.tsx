@@ -1,17 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 
-// Clean base URL to prevent "Invalid path specified in request URL"
-const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim().replace(/\/+$/, "");
-const supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
-
-const supabase = createClient(
-  supabaseUrl,
-  supabaseAnonKey
-);
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export default function AdminDashboard() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -40,33 +33,36 @@ export default function AdminDashboard() {
     setErrorMessage("");
     
     try {
+      const headers = {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json"
+      };
+
       // 1. Fetch pending submissions
-      const { data: pending, error: pErr } = await supabase
-        .from("tools")
-        .select("*")
-        .eq("status", "pending");
-      if (pErr) console.error("Pending tools error:", pErr);
-      setPendingTools(pending || []);
+      const resPending = await fetch(`${SUPABASE_URL}/rest/v1/tools?status=eq.pending`, { headers });
+      if (resPending.ok) {
+        const pending = await resPending.json();
+        setPendingTools(pending || []);
+      }
 
       // 2. Fetch all tools
-      const { data: allTools, error: tErr } = await supabase
-        .from("tools")
-        .select("*");
-
-      if (tErr) {
-        console.error("All tools fetch error:", tErr);
-        setErrorMessage(`Supabase Error: ${tErr.message}`);
+      const resTools = await fetch(`${SUPABASE_URL}/rest/v1/tools?select=*`, { headers });
+      if (!resTools.ok) {
+        const errJson = await resTools.json();
+        setErrorMessage(`Supabase Error: ${errJson.message || resTools.statusText}`);
       } else {
+        const allTools = await resTools.json();
         const reviewed = (allTools || []).filter((t: any) => t.status !== "pending");
         setActiveTools(reviewed);
       }
 
       // 3. Fetch claims queue
-      const { data: claims, error: cErr } = await supabase
-        .from("claims")
-        .select("*");
-      if (cErr) console.error("Claims fetch error:", cErr);
-      setGuestArticles(claims || []);
+      const resClaims = await fetch(`${SUPABASE_URL}/rest/v1/claims?select=*`, { headers });
+      if (resClaims.ok) {
+        const claims = await resClaims.json();
+        setGuestArticles(claims || []);
+      }
 
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to fetch database records.");
@@ -76,13 +72,28 @@ export default function AdminDashboard() {
   };
 
   const updateToolStatus = async (id: number, status: string) => {
-    await supabase.from("tools").update({ status }).eq("id", id);
+    await fetch(`${SUPABASE_URL}/rest/v1/tools?id=eq.${id}`, {
+      method: "PATCH",
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify({ status })
+    });
     fetchData();
   };
 
   const deleteTool = async (id: number) => {
     if (confirm("Are you sure you want to delete this listing?")) {
-      await supabase.from("tools").delete().eq("id", id);
+      await fetch(`${SUPABASE_URL}/rest/v1/tools?id=eq.${id}`, {
+        method: "DELETE",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      });
       fetchData();
     }
   };
