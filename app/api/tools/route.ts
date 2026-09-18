@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         name: body.name,
         category: body.category,
         url: body.url,
-        pricing: body.pricing,
+        pricing: body.pricing || "Contact for Pricing",
         description: body.description
       }
     ])
