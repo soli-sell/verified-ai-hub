@@ -64,7 +64,7 @@ export default function SubmitTool() {
       setErrorMessage(error.message);
     } else {
       setSubmitStatus("success");
-      setFormData({ name: "", category: "Healthcare", description: "", url: "", submitter_email: "" });
+      setFormData({ name: "", category: "Healthcare", description: "", url: "", submitter_email: "", pricing: "Contact for Pricing" });
       setSelectedCompliance([]);
     }
   };
