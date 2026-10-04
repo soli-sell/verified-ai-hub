@@ -1,35 +1,50 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { success: false, error: { message: "RESEND_API_KEY environment variable is missing" } },
+        { status: 500 }
+      );
+    }
+
+    const resend = new Resend(apiKey);
     const { name, email, message } = await req.json();
 
-    const data = await resend.emails.send({
+    if (!email || !message) {
+      return NextResponse.json(
+        { success: false, error: { message: "Email and message are required" } },
+        { status: 400 }
+      );
+    }
+
+    // Send email using verified domain
+    const { data, error } = await resend.emails.send({
       from: "Verified AI Hub <support@verifiedaihub.com>",
-      to: ["support@verifiedaihub.com"],
-      subject: `New Contact Submission from ${name}`,
+      to: ["support@verifiedaihub.com", "solfar55@gmail.com"],
+      subject: `New Contact Submission from ${name || "Visitor"}`,
       replyTo: email,
       html: `
-        <h3>New Contact Message</h3>
-        <p><strong>Name:</strong> ${name}</p>
+        <h2>New Contact Submission</h2>
+        <p><strong>Name:</strong> ${name || "N/A"}</p>
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Message:</strong></p>
-        <p>${message}</p>
+        <p style="background: #f1f5f9; padding: 12px; border-radius: 6px;">${message}</p>
       `,
     });
 
-    if (data.error) {
-      return NextResponse.json({ success: false, error: data.error }, { status: 400 });
+    if (error) {
+      return NextResponse.json({ success: false, error }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    return NextResponse.json(
-      { success: false, error: { message: error.message || "Internal Server Error" } },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Internal Server Error";
+    return NextResponse.json({ success: false, error: { message: errorMsg } }, { status: 500 });
   }
 }
