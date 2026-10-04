@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     // Send email using verified domain
     const { data, error } = await resend.emails.send({
       from: "Verified AI Hub <support@verifiedaihub.com>",
-      to: ["support@verifiedaihub.com", "solfar55@gmail.com"],
+      to: ["support@verifiedaihub.com"],
       subject: `New Contact Submission from ${name || "Visitor"}`,
       replyTo: email,
       html: `
