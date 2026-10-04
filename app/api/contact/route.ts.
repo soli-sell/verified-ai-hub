@@ -1,4 +1,4 @@
-import { Resend } from 'resend';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -6,33 +6,35 @@ export async function POST(req: Request) {
   try {
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: "RESEND_API_KEY is missing" }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+      return NextResponse.json({ success: false, error: 'RESEND_API_KEY is missing' }, { status: 500 });
     }
 
-    const resend = new Resend(apiKey);
     const body = await req.json();
     const { name, email, message } = body;
 
-    const data = await resend.emails.send({
-      from: 'VerifiedAIHub <onboarding@resend.dev>',
-      to: 'support@verifiedaihub.com',
-      replyTo: email,
-      subject: `New Contact Submission from ${name || 'Website User'}`,
-      text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+    const resendRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: 'VerifiedAIHub <onboarding@resend.dev>',
+        to: 'support@verifiedaihub.com',
+        reply_to: email,
+        subject: `New Contact Submission from ${name || 'Website User'}`,
+        text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+      }),
     });
 
-    return new Response(
-      JSON.stringify({ success: true, data }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
-    return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    const data = await resendRes.json();
+
+    if (!resendRes.ok) {
+      return NextResponse.json({ success: false, error: data }, { status: resendRes.status });
+    }
+
+    return NextResponse.json({ success: true, data });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error?.message || 'Internal Server Error' }, { status: 500 });
   }
 }
