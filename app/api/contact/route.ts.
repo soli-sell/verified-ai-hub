@@ -7,56 +7,22 @@ export async function POST(request: Request) {
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { success: false, error: 'RESEND_API_KEY environment variable is missing' },
+        { success: false, error: 'RESEND_API_KEY environment variable is missing on Vercel' },
         { status: 500 }
       );
     }
 
     const body = await request.json();
-    const { name, email, message } = body;
+    const name = body.name || body.contactData?.name || 'Website Visitor';
+    const email = body.email || body.contactData?.email || 'No email provided';
+    const message = body.message || body.contactData?.message || '';
 
-    const resendRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        from: 'VerifiedAIHub <onboarding@resend.dev>',
-        to: 'support@verifiedaihub.com',
-        reply_to: email,
-        subject: `New Enterprise Contact Form Submission from ${name || 'User'}`,
-        text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
-      }),
-    });
-
-    const data = await resendRes.json();
-
-    if (!resendRes.ok) {
-      return NextResponse.json({ success: false, error: data }, { status: resendRes.status });
-    }
-
-    return NextResponse.json({ success: true, data });
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Internal Server Error';
-    return NextResponse.json({ success: false, error: errorMsg }, { status: 500 });
-  }
-}import { NextResponse } from 'next/server';
-
-export const dynamic = 'force-dynamic';
-
-export async function POST(request: Request) {
-  try {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
+    if (!email || !message) {
       return NextResponse.json(
-        { success: false, error: 'RESEND_API_KEY environment variable is missing' },
-        { status: 500 }
+        { success: false, error: 'Email and message are required fields' },
+        { status: 400 }
       );
     }
-
-    const body = await request.json();
-    const { name, email, message } = body;
 
     const resendRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -65,11 +31,11 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: 'VerifiedAIHub <onboarding@resend.dev>',
+        from: 'VerifiedAIHub <noreply@verifiedaihub.com>',
         to: 'support@verifiedaihub.com',
         reply_to: email,
-        subject: `New Enterprise Contact Form Submission from ${name || 'User'}`,
-        text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+        subject: `New Contact Submission from ${name}`,
+        text: `Name: ${name}\nUser Email: ${email}\n\nMessage:\n${message}`,
       }),
     });
 
