@@ -39,6 +39,7 @@ export default function AdminDashboard() {
         "Content-Type": "application/json"
       };
 
+
       // 1. Fetch pending submissions
       const resPending = await fetch(`${SUPABASE_URL}/rest/v1/tools?status=eq.pending`, { headers });
       if (resPending.ok) {
@@ -132,13 +133,14 @@ export default function AdminDashboard() {
       </header>
 
       <main style={{ maxWidth: "1100px", margin: "32px auto 0 auto", padding: "0 20px" }}>
-        
+      118
+      
+      
         {errorMessage && (
           <div style={{ backgroundColor: "#fee2e2", color: "#b91c1c", padding: "12px 16px", borderRadius: "8px", marginBottom: "20px", fontWeight: "bold", fontSize: "14px" }}>
             {errorMessage}
           </div>
         )}
-
         {/* Guest Articles & Inquiries Box */}
         <section style={{ backgroundColor: "#ffffff", borderRadius: "12px", padding: "28px", marginBottom: "28px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: guestArticles.length > 0 ? "20px" : "0" }}>
