@@ -1,53 +1,35 @@
-import { NextResponse } from 'next/server';
+import { Resend } from "resend";
+import { NextResponse } from "next/server";
 
-export const dynamic = 'force-dynamic';
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { success: false, error: 'RESEND_API_KEY environment variable is missing on Vercel' },
-        { status: 500 }
-      );
-    }
+    const { name, email, message } = await req.json();
 
-    const body = await request.json();
-    const name = body.name || body.contactData?.name || 'Website Visitor';
-    const email = body.email || body.contactData?.email || 'No email provided';
-    const message = body.message || body.contactData?.message || '';
-
-    if (!email || !message) {
-      return NextResponse.json(
-        { success: false, error: 'Email and message are required fields' },
-        { status: 400 }
-      );
-    }
-
-    const resendRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        from: 'VerifiedAIHub <noreply@verifiedaihub.com>',
-        to: 'support@verifiedaihub.com',
-        reply_to: email,
-        subject: `New Contact Submission from ${name}`,
-        text: `Name: ${name}\nUser Email: ${email}\n\nMessage:\n${message}`,
-      }),
+    const data = await resend.emails.send({
+      from: "Verified AI Hub <support@verifiedaihub.com>",
+      to: ["support@verifiedaihub.com"],
+      subject: `New Contact Submission from ${name}`,
+      replyTo: email,
+      html: `
+        <h3>New Contact Message</h3>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+      `,
     });
 
-    const data = await resendRes.json();
-
-    if (!resendRes.ok) {
-      return NextResponse.json({ success: false, error: data }, { status: resendRes.status });
+    if (data.error) {
+      return NextResponse.json({ success: false, error: data.error }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, data });
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Internal Server Error';
-    return NextResponse.json({ success: false, error: errorMsg }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: { message: error.message || "Internal Server Error" } },
+      { status: 500 }
+    );
   }
 }
