@@ -1,30 +1,13 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: Request) {
   try {
-    const { name, email, message } = await req.json();
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      return Response.json({ success: false, error: "RESEND_API_KEY is not configured" }, { status: 500 });
+    }
 
-    const data = await resend.emails.send({
-      from: 'VerifiedAIHub <onboarding@verifiedaihub.com>',
-      to: 'support@verifiedaihub.com',
-      subject: `New Contact Form Submission from ${name || 'User'}`,
-      replyTo: email,
-      text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
-    });
-
-    return Response.json({ success: true, data });
-  } catch (error) {
-    console.error('Resend Error:', error);
-    return Response.json({ success: false, error }, { status: 500 });
-  }
-}import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-export async function POST(req: Request) {
-  try {
+    const resend = new Resend(apiKey);
     const body = await req.json();
     const { name, email, message } = body;
 
@@ -32,18 +15,12 @@ export async function POST(req: Request) {
       from: 'VerifiedAIHub <onboarding@resend.dev>',
       to: 'support@verifiedaihub.com',
       replyTo: email,
-      subject: `New Enterprise Inquiry from ${name || 'Website User'}`,
+      subject: `New Contact Submission from ${name || 'Website User'}`,
       text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
     });
 
-    if (data.error) {
-      console.error('Resend API Returned Error:', data.error);
-      return Response.json({ success: false, error: data.error }, { status: 400 });
-    }
-
     return Response.json({ success: true, data });
   } catch (error: any) {
-    console.error('Server Error:', error);
-    return Response.json({ success: false, error: error.message || String(error) }, { status: 500 });
+    return Response.json({ success: false, error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }
