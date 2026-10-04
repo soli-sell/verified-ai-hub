@@ -131,7 +131,7 @@ export default function Home() {
     setReviewComment("");
   };
 
- const handleContactSubmit = async (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setContactStatus("submitting");
 
@@ -262,8 +262,6 @@ export default function Home() {
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                     <span style={{ backgroundColor: "#e0f2fe", color: "#0369a1", fontSize: "12px", fontWeight: "bold", padding: "4px 10px", borderRadius: "6px" }}>{tool.category}</span>
-                    
-                    {/* ACCURATE BADGING */}
                     {tool.is_gold ? (
                       <span style={{ backgroundColor: "#fef9c3", color: "#854d0e", fontSize: "12px", fontWeight: "bold", padding: "4px 10px", borderRadius: "20px", border: "1px solid #fef08a" }}>⭐ Verified Gold</span>
                     ) : (
@@ -294,11 +292,9 @@ export default function Home() {
         )}
       </main>
 
-      {/* FOOTER */}
+      {/* Footer */}
       <footer style={{ backgroundColor: "#ffffff", borderTop: "1px solid #e0f2fe", padding: "32px 24px 24px 24px", marginTop: "40px" }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          
-          {/* LEGAL DISCLAIMER NOTICE */}
           <div style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "16px 20px", marginBottom: "24px", fontSize: "12px", color: "#64748b", lineHeight: "1.6" }}>
             <strong>Legal Disclaimer:</strong> VerifiedAIHub indexes publicly available business facts, product specifications, and vendor-declared compliance standards for evaluation and market research purposes under nominative fair use. Listing on this platform does not constitute an official legal audit or endorsement unless explicitly designated with a Verified Gold status. Healthcare organizations must conduct independent due diligence prior to software deployment.
           </div>
@@ -319,7 +315,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* TOOL DETAIL & MONETIZATION MODAL */}
+      {/* Tool Detail Modal */}
       {selectedTool && (
         <div onClick={() => setSelectedTool(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }}>
           <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "#ffffff", borderRadius: "16px", maxWidth: "700px", width: "100%", maxHeight: "85vh", overflowY: "auto", padding: "32px", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)", position: "relative" }}>
@@ -348,7 +344,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* MONETIZATION BLOCK */}
+            {/* Monetization Block */}
             <div style={{ backgroundColor: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: "12px", padding: "20px", marginBottom: "28px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
@@ -385,7 +381,7 @@ export default function Home() {
               )}
             </div>
 
-            {/* REVIEWS & RATINGS */}
+            {/* Reviews */}
             <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "24px" }}>
               <h3 style={{ fontSize: "18px", fontWeight: "bold", color: "#0f172a", marginBottom: "16px" }}>Enterprise Ratings & Reviews</h3>
 
@@ -399,9 +395,9 @@ export default function Home() {
                   <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
                     <label style={{ fontSize: "13px", color: "#64748b" }}>Rating:</label>
                     <select value={reviewRating} onChange={(e) => setReviewRating(Number(e.target.value))} style={{ padding: "4px 8px", borderRadius: "6px", border: "1px solid #cbd5e1" }}>
-                      <option value={5}>⭐⭐⭐⭐⭐ (5/5)</option>
-                      <option value={4}>⭐⭐⭐⭐ (4/5)</option>
-                      <option value={3}>⭐⭐⭐ (3/5)</option>
+                      <option value={5}>⭐ ⭐ ⭐ ⭐ ⭐ (5/5)</option>
+                      <option value={4}>⭐ ⭐ ⭐ ⭐ (4/5)</option>
+                      <option value={3}>⭐ ⭐ ⭐ (3/5)</option>
                     </select>
                   </div>
                   <textarea
@@ -418,12 +414,9 @@ export default function Home() {
                 </form>
               )}
 
-              {/* DYNAMIC REVIEWS LIST */}
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" }}>
                 {fetchedReviews.length === 0 ? (
-                  <p style={{ fontSize: "13px", color: "#64748b", fontStyle: "italic", margin: 0 }}>
-                    No public reviews approved yet for this tool.
-                  </p>
+                  <p style={{ fontSize: "13px", color: "#64748b", fontStyle: "italic", margin: 0 }}>No public reviews approved yet for this tool.</p>
                 ) : (
                   fetchedReviews.map((rev: any) => (
                     <div key={rev.id} style={{ backgroundColor: "#f1f5f9", padding: "12px 16px", borderRadius: "8px" }}>
@@ -437,17 +430,14 @@ export default function Home() {
               </div>
             </div>
           </div>
-       {/* POPUP MODALS */}
+        </div>
+      )}
+
+      {/* Popup Modals */}
       {activeModal && (
-        <div onClick={() => {
-          setActiveModal(null);
-          setContactStatus("idle");
-        }} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }}>
+        <div onClick={() => { setActiveModal(null); setContactStatus("idle"); }} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }}>
           <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "#ffffff", borderRadius: "16px", maxWidth: "650px", width: "100%", maxHeight: "80vh", overflowY: "auto", padding: "32px", position: "relative" }}>
-            <button onClick={() => {
-              setActiveModal(null);
-              setContactStatus("idle");
-            }} style={{ position: "absolute", top: "16px", right: "20px", background: "none", border: "none", fontSize: "24px", color: "#64748b", cursor: "pointer" }}>✕</button>
+            <button onClick={() => { setActiveModal(null); setContactStatus("idle"); }} style={{ position: "absolute", top: "16px", right: "20px", background: "none", border: "none", fontSize: "24px", color: "#64748b", cursor: "pointer" }}>✕</button>
 
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", borderBottom: "1px solid #e0f2fe", paddingBottom: "16px" }}>
               <div style={{ width: "32px", height: "32px", backgroundColor: "#0284c7", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontWeight: "900", fontSize: "18px" }}>V</div>
