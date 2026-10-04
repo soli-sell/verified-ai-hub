@@ -131,12 +131,28 @@ export default function Home() {
     setReviewComment("");
   };
 
-  const handleContactSubmit = async (e: React.FormEvent) => {
+ const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setContactStatus("submitting");
-    await supabase.from("contacts").insert([contactData]);
-    setContactStatus("success");
-    setContactData({ name: "", email: "", subject: "General Inquiry", message: "" });
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contactData),
+      });
+
+      if (res.ok) {
+        setContactStatus("success");
+        setContactData({ name: "", email: "", subject: "General Inquiry", message: "" });
+      } else {
+        console.error("Failed to send email via Resend API");
+        setContactStatus("idle");
+      }
+    } catch (error) {
+      console.error("Error sending contact email:", error);
+      setContactStatus("idle");
+    }
   };
 
   const filteredTools = tools.filter((tool) => {
@@ -421,14 +437,17 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* POPUP MODALS */}
+       {/* POPUP MODALS */}
       {activeModal && (
-        <div onClick={() => setActiveModal(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }}>
+        <div onClick={() => {
+          setActiveModal(null);
+          setContactStatus("idle");
+        }} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }}>
           <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "#ffffff", borderRadius: "16px", maxWidth: "650px", width: "100%", maxHeight: "80vh", overflowY: "auto", padding: "32px", position: "relative" }}>
-            <button onClick={() => setActiveModal(null)} style={{ position: "absolute", top: "16px", right: "20px", background: "none", border: "none", fontSize: "24px", color: "#64748b", cursor: "pointer" }}>✕</button>
+            <button onClick={() => {
+              setActiveModal(null);
+              setContactStatus("idle");
+            }} style={{ position: "absolute", top: "16px", right: "20px", background: "none", border: "none", fontSize: "24px", color: "#64748b", cursor: "pointer" }}>✕</button>
 
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", borderBottom: "1px solid #e0f2fe", paddingBottom: "16px" }}>
               <div style={{ width: "32px", height: "32px", backgroundColor: "#0284c7", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontWeight: "900", fontSize: "18px" }}>V</div>
