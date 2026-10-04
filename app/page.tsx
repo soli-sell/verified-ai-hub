@@ -474,11 +474,38 @@ export default function Home() {
                   <div style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "16px", borderRadius: "8px", fontWeight: "bold" }}>✓ Message transmitted successfully!</div>
                 ) : (
                   <form onSubmit={handleContactSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    <input type="text" required placeholder="Your Name" value={contactData.name} onChange={(e) => setContactData({ ...contactData, name: e.target.value })} style={{ padding: "10px", borderRadius: "8px", border: "1px solid #bae6fd" }} />
-                    <input type="email" required placeholder="Your Email" value={contactData.email} onChange={(e) => setContactData({ ...contactData, email: e.target.value })} style={{ padding: "10px", borderRadius: "8px", border: "1px solid #bae6fd" }} />
-                    <textarea required rows={3} placeholder="Message / Opt-out request" value={contactData.message} onChange={(e) => setContactData({ ...contactData, message: e.target.value })} style={{ padding: "10px", borderRadius: "8px", border: "1px solid #bae6fd" }} />
-                    <button type="submit" style={{ backgroundColor: "#0284c7", color: "#ffffff", padding: "10px", borderRadius: "8px", border: "none", fontWeight: "bold", cursor: "pointer" }}>Send Message</button>
-                  </form>
+  <input 
+    type="text" 
+    required 
+    placeholder="Your Name"
+    value={contactData.name || ""}
+    onChange={(e) => setContactData({ ...contactData, name: e.target.value })}
+    style={{ padding: "10px", borderRadius: "6px", border: "1px solid #ccc", color: "#000000" }}
+  />
+  <input 
+    type="email" 
+    required 
+    placeholder="Your Email"
+    value={contactData.email || ""}
+    onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
+    style={{ padding: "10px", borderRadius: "6px", border: "1px solid #ccc", color: "#000000" }}
+  />
+  <textarea 
+    required 
+    rows={3} 
+    placeholder="Message / Feedback"
+    value={contactData.message || ""}
+    onChange={(e) => setContactData({ ...contactData, message: e.target.value })}
+    style={{ padding: "10px", borderRadius: "6px", border: "1px solid #ccc", color: "#000000" }}
+  />
+  <button 
+    type="submit" 
+    disabled={contactStatus === "submitting"}
+    style={{ backgroundColor: "#0284c7", color: "#ffffff", padding: "12px", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: "bold" }}
+  >
+    {contactStatus === "submitting" ? "Sending..." : "Send Message"}
+  </button>
+</form>
                 )}
               </div>
             )}
