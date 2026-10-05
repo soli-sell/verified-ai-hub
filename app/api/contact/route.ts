@@ -14,7 +14,10 @@ export async function POST(req: Request) {
     }
 
     const resend = new Resend(apiKey);
-    const { name, email, message } = await req.json();
+    const body = await req.json();
+    const name = String(body.name || "Visitor");
+    const email = String(body.email || "");
+    const message = String(body.message || "");
 
     if (!email || !message) {
       return NextResponse.json(
@@ -23,20 +26,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const senderName = name || "Visitor";
-    const displayName = name || "N/A";
-
-    const { data, error } = await resend.emails.send({
+    const response = await resend.emails.send({
       from: "Verified AI Hub <onboarding@resend.dev>",
       to: ["support@verifiedaihub.com"],
-      subject: "New Contact Submission from " + senderName,
-      replyTo: email,
-      html: "<h2>New Contact Submission</h2><p><strong>Na      html: "<h2>New Contact Submissip><stron      html: "<h2>New Contact+ "</p><p><strong>Message:</strong></p><p style=\"background: #f1f5f9; padding: 12px; border-radius: 6px;\">" + message + "</p>",
-      html: "<h2>Nrror) {
-      return NextResponse.json({ success: false, error }, { status: 400 });
-    }
-
-    return NextResponse.json({ success: true, data });
-  } ca  } ca  } ca  } ca  } ca const errorMsg  } ca  } ca  } ca  } ca  } ca const errorMsg  }  Server  } ca  } ca  } ca  } ca  } on  } ca  } ca  } ca  }lse, error: { message: errorMsg } }, { status: 500 });
+      subject: `New Contact Submission from ${name}`,
+      replyTo: email      replyTo: email      replySu      replyTo: email      replyTo: email name      replyTo: email      replyTo: emal}</p><p><strong>Message:</strong></p><p style  backgr      replyTo: email      replyTo: emailius: 6p      replyTo}</p>`      replyTo: email      reerro      replyTo: email      replyTo: email      replySu      replyTo: email      replyTus: 400 });
+                    xtRes   se.json({ suc                    xtRes   se.jso;
+  } catch (err: unknown) {
+    const e    const e    const e    const e    const e : "I    cal Server Error";
+    return NextRespon    return NextRespon    return NextRespon  errorMsg } }, { status: 500 });
   }
 }
