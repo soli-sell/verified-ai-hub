@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: "Verified AI Hub <onboarding@resend.dev>",
+      from: "Verified AI Hub <support@verifiedaihub.com>",
       to: ["support@verifiedaihub.com"],
       subject: "New Contact Submission from " + name,
       replyTo: email,
