@@ -26,14 +26,21 @@ export async function POST(req: Request) {
       );
     }
 
-    const response = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: "Verified AI Hub <onboarding@resend.dev>",
       to: ["support@verifiedaihub.com"],
-      subject: `New Contact Submission from ${name}`,
-      replyTo: email      replyTo: email      replySu      replyTo: email      replyTo: email name      replyTo: email      replyTo: emal}</p><p><strong>Message:</strong></p><p style  backgr      replyTo: email      replyTo: emailius: 6p      replyTo}</p>`      replyTo: email      reerro      replyTo: email      replyTo: email      replySu      replyTo: email      replyTus: 400 });
-                    xtRes   se.json({ suc                    xtRes   se.jso;
+      subject: "New Contact Submission from " + name,
+      replyTo: email,
+      html: "<h2>New Contact Submission</h2><p><strong>Name:</strong> " + name + "</p><p><strong>Email:</strong> " + email + "</p><p><strong>Message:</strong></p><p style=\"background: #f1f5f9; padding: 12px; border-radius: 6px;\">" + message + "</p>",
+    });
+
+    if (error) {
+      return NextResponse.json({ success: false, error }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, data });
   } catch (err: unknown) {
-    const e    const e    const e    const e    const e : "I    cal Server Error";
-    return NextRespon    return NextRespon    return NextRespon  errorMsg } }, { status: 500 });
+    const errorMsg = err instanceof Error ? err.message : "Internal Server Error";
+    return NextResponse.json({ success: false, error: { message: errorMsg } }, { status: 500 });
   }
 }
