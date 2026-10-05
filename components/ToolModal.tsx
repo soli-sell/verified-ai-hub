@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 
-interface ToolModalProps {
+export interface ToolModalProps {
   tool: {
     name: string;
-    category: string;
+    category?: string;
+    sector?: string;
     description: string;
     websiteUrl?: string;
+    website_url?: string;
     compliance?: string[];
     isClaimed?: boolean;
   } | null;
@@ -17,6 +19,9 @@ export default function ToolModal({ tool, onClose }: ToolModalProps) {
   const [reviewText, setReviewText] = useState("");
 
   if (!tool) return null;
+
+  const website = tool.websiteUrl || tool.website_url;
+  const categoryName = tool.category || tool.sector || "Healthcare";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -34,11 +39,11 @@ export default function ToolModal({ tool, onClose }: ToolModalProps) {
         {/* Category & Visit Website Button */}
         <div className="flex items-center justify-between pr-8">
           <span className="inline-block rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
-            {tool.category}
+            {categoryName}
           </span>
-          {tool.websiteUrl && (
+          {website && (
             <a
-              href={tool.websiteUrl}
+              href={website}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 rounded-lg bg-[#0088cc] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0077bb] transition"
@@ -54,7 +59,7 @@ export default function ToolModal({ tool, onClose }: ToolModalProps) {
         {/* Description */}
         <p className="mt-3 text-gray-600 leading-relaxed">{tool.description}</p>
 
-        {/* Compliance */}
+        {/* Compliance Credentials */}
         {tool.compliance && tool.compliance.length > 0 && (
           <div className="mt-6">
             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500">
