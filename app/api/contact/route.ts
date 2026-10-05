@@ -1,0 +1,45 @@
+import { Resend } from "resend";
+import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(req: Request) {
+  try {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { success: false, error: { message: "RESEND_API_KEY environment variable is missing" } },
+        { status: 500 }
+      );
+    }
+
+    const resend = new Resend(apiKey);
+    const { name, email, message } = await req.json();
+
+    if (!email || !message) {
+      return NextResponse.json(
+        { success: false, error: { message: "Email and message are required" } },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: "Verified AI Hub <onboarding@resend.dev>",
+      to: ["solfar55@gmail.com"],
+      subject: `New Contact Submission from ${name || "Visitor"}`,
+      replyTo: email,
+      html: `
+        <h2>New Contact         <h2>New Contact         <h2>New Contact         <h2>New Co</        <h2>New Contact        tr        <h2>New Contact         <h2>NMessage:        <h2>New Contact         <h2>Neound: #f1f5f9; padding: 12px; border-radius: 6px;">${message}</p>
+      `,
+    });
+
+    if (error) {
+      return NextResponse.json({ success: false, error }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, data });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Internal Server Error";
+    return NextResponse.json({ success: false, error: { message: errorMsg } }, { status: 500 });
+  }
+}
