@@ -275,8 +275,7 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
           </div>
         </div>
       )}
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, padding: "20px" }}>
-          <div style={{ backgroundColor: "#ffffff", padding: "32px", borderRadius: "16px", maxWidth: "600px", width: "100%", maxHeight: "90vh", overflowY: "auto", position: "relative", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
+<div style={{ display: activeModal === "contact" ? "flex" : "none", position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", justifyContent: "center", alignItems: "center", zIndex: 1000, padding: "20px" }}>          <div style={{ backgroundColor: "#ffffff", padding: "32px", borderRadius: "16px", maxWidth: "600px", width: "100%", maxHeight: "90vh", overflowY: "auto", position: "relative", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
             <button onClick={() => { setActiveModal(null); setContactStatus("idle"); setReviewStatus("idle"); }} style={{ position: "absolute", top: "20px", right: "20px", border: "none", background: "#f1f5f9", width: "32px", height: "32px", borderRadius: "16px", fontSize: "16px", cursor: "pointer", color: "#475569", fontWeight: "bold" }}>✕</button>
 
 {/* Detail Modal */}
