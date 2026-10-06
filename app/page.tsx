@@ -259,23 +259,48 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
             >
               ✕
             </button>
-            <h3 style={{ marginTop: 0, fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>
+<h3 style={{ marginTop: 0, fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>
               Claim {selectedTool.name}
             </h3>
             <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "20px" }}>
               Verify ownership to claim this profile and receive a Verified Gold Badge.
             </p>
-            <form onSubmit={(e) => { e.preventDefault(); alert("Claim request submitted!"); setActiveModal(null); }} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <input type="text" placeholder="Your Full Name" required style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
-              <input type="email" placeholder="Work Email Address" required style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
-              <input type="text" placeholder="Proof Link (LinkedIn Profile or Site)" required style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const form = e.currentTarget;
+                const formData = new FormData(form);
+                const name = formData.get("name") as string;
+                const email = formData.get("email") as string;
+                const proof = formData.get("proof") as string;
+
+                try {
+                  await fetch("/api/contact", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      name,
+                      email,
+                      message: `CLAIM REQUEST for tool: ${selectedTool.name}\nProof Link: ${proof}`,
+                    }),
+                  });
+                  alert("Claim request sent successfully to support@verifiedaihub.com!");
+                  setActiveModal(null);
+                } catch (err) {
+                  alert("Failed to submit claim request. Please try again.");
+                }
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            >
+              <input name="name" type="text" placeholder="Your Full Name" required style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
+              <input name="email" type="email" placeholder="Work Email Address" required style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
+              <input name="proof" type="text" placeholder="Proof Link (LinkedIn Profile or Site)" required style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
               <button type="submit" style={{ backgroundColor: "#0284c7", color: "#ffffff", padding: "12px", borderRadius: "8px", fontWeight: "700", border: "none", cursor: "pointer", marginTop: "8px" }}>
                 Submit Claim Request
               </button>
             </form>
           </div>
-        </div>
-      )}
+        </div>      )}
 
       {/* Detail Modal */}
       {activeModal === "detail" && selectedTool && (
