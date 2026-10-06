@@ -9,14 +9,17 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedCompliance, setSelectedCompliance] = useState("All Standards");
-const [selectedTool, setSelectedTool] = useState<any | null>(null);
-const [activeModal, setActiveModal] = useState<string | null>(null);// Form State
+  const [selectedTool, setSelectedTool] = useState<any | null>(null);
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
+  // Form States
   const [reviewComment, setReviewComment] = useState("");
   const [reviewStatus, setReviewStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [contactData, setContactData] = useState({ name: "", email: "", message: "" });
   const [contactStatus, setContactStatus] = useState<"idle" | "submitting" | "success">("idle");
-  const [claimData, setClaimData] = useState({ name: "", email: "", proof: "" });
-  const [claimStatus, setClaimStatus] = useState<"idle" | "submitting" | "success">("idle");  const complianceStandards = ["All Standards", "HIPAA", "FDA Cleared", "SOC2", "GDPR", "ISO 27001", "CLIA", "HITRUST"];
+
+  const complianceStandards = ["All Standards", "HIPAA", "FDA Cleared", "SOC2", "GDPR", "ISO 27001", "CLIA", "HITRUST"];
+  const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotech", "Pharma", "Financial Health"];
 
   useEffect(() => {
     fetchTools();
@@ -28,16 +31,6 @@ const [activeModal, setActiveModal] = useState<string | null>(null);// Form Stat
       .select("*")
       .eq("status", "approved");
     if (data) setTools(data);
-  };
-
-  const handleReviewSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedTool) return;
-    await supabase.from("reviews").insert([
-      { tool_id: selectedTool?.id, tool_name: selectedTool?.name, comment: reviewComment }
-    ]);
-    setReviewStatus("success");
-    setReviewComment("");
   };
 
   const handleContactSubmit = async (e: React.FormEvent) => {
@@ -67,16 +60,6 @@ const [activeModal, setActiveModal] = useState<string | null>(null);// Form Stat
     }
   };
 
-  const handleClaimSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setClaimStatus("submitting");
-    await supabase.from("claims").insert([
-      { tool_id: selectedTool?.id, tool_name: selectedTool?.name, name: claimData.name, email: claimData.email, proof: claimData.proof }
-    ]);
-    setClaimStatus("success");
-    setClaimData({ name: "", email: "", proof: "" });
-  };
-
   const filteredTools = tools.filter((tool: any) => {
     const matchesCategory = selectedCategory === "All" || tool.category === selectedCategory;
     const matchesCompliance = selectedCompliance === "All Standards" || (tool.compliance && tool.compliance.includes(selectedCompliance));
@@ -87,7 +70,7 @@ const [activeModal, setActiveModal] = useState<string | null>(null);// Form Stat
 
     return matchesCategory && matchesCompliance && matchesSearch;
   });
-const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotech", "Pharma", "Financial Health"];
+
   return (
     <div style={{ backgroundColor: "#f0f9ff", minHeight: "100vh", fontFamily: "sans-serif", display: "flex", flexDirection: "column" }}>
       {/* Header */}
@@ -247,7 +230,7 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
         </div>
       </footer>
 
-{/* Modals */}
+      {/* Modals */}
 
       {/* Claim Modal */}
       {activeModal === "claim" && selectedTool && (
@@ -259,7 +242,7 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
             >
               ✕
             </button>
-<h3 style={{ marginTop: 0, fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>
+            <h3 style={{ marginTop: 0, fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>
               Claim {selectedTool.name}
             </h3>
             <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "20px" }}>
@@ -300,7 +283,8 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
               </button>
             </form>
           </div>
-        </div>      )}
+        </div>
+      )}
 
       {/* Detail Modal */}
       {activeModal === "detail" && selectedTool && (
@@ -379,20 +363,20 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
                     ✓ Thank you for your review! It has been submitted for moderation.
                   </div>
                 ) : (
-<form
+                  <form
                     onSubmit={async (e) => {
                       e.preventDefault();
                       if (!reviewComment.trim()) return;
                       setReviewStatus("submitting");
 
                       try {
-                        await fetch("/api/notify-submission", {
+                        await fetch("/api/contact", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({
-                            toolName: selectedTool.name,
-                            comment: reviewComment,
-                            type: "Clinical Review",
+                            name: "Clinical Reviewer",
+                            email: "support@verifiedaihub.com",
+                            message: `NEW CLINICAL REVIEW for ${selectedTool.name}:\n\nReview: ${reviewComment}`,
                           }),
                         });
                         setReviewStatus("success");
@@ -402,7 +386,8 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
                         alert("Could not submit review. Please try again.");
                       }
                     }}
-                  >                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
                       <span style={{ fontSize: "13px", color: "#475569" }}>Rating:</span>
                       <select style={{ backgroundColor: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", fontWeight: "600" }}>
                         <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
