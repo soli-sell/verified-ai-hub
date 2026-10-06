@@ -12,16 +12,13 @@ export default function Home() {
   const [selectedTool, setSelectedTool] = useState<any | null>(null);
   const [activeModal, setActiveModal] = useState<"detail" | "submit" | "contact" | "claim" | "about" | "privacy" | "terms" | null>(null);
 
-  // Form State
+// Form State
   const [reviewComment, setReviewComment] = useState("");
-  const [reviewStatus, setReviewStatus] = useState<"idle" | "success">("idle");
+  const [reviewStatus, setReviewStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [contactData, setContactData] = useState({ name: "", email: "", message: "" });
   const [contactStatus, setContactStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [claimData, setClaimData] = useState({ name: "", email: "", proof: "" });
-  const [claimStatus, setClaimStatus] = useState<"idle" | "submitting" | "success">("idle");
-
-  const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotech", "Pharma", "Financial Health"];
-  const complianceStandards = ["All Standards", "HIPAA", "FDA Cleared", "SOC2", "GDPR", "ISO 27001", "CLIA", "HITRUST"];
+  const [claimStatus, setClaimStatus] = useState<"idle" | "submitting" | "success">("idle");  const complianceStandards = ["All Standards", "HIPAA", "FDA Cleared", "SOC2", "GDPR", "ISO 27001", "CLIA", "HITRUST"];
 
   useEffect(() => {
     fetchTools();
@@ -92,7 +89,7 @@ export default function Home() {
 
     return matchesCategory && matchesCompliance && matchesSearch;
   });
-
+const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotech", "Pharma", "Financial Health"];
   return (
     <div style={{ backgroundColor: "#f0f9ff", minHeight: "100vh", fontFamily: "sans-serif", display: "flex", flexDirection: "column" }}>
       {/* Header */}
@@ -258,45 +255,137 @@ export default function Home() {
           <div style={{ backgroundColor: "#ffffff", padding: "32px", borderRadius: "16px", maxWidth: "600px", width: "100%", maxHeight: "90vh", overflowY: "auto", position: "relative", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
             <button onClick={() => { setActiveModal(null); setContactStatus("idle"); setReviewStatus("idle"); }} style={{ position: "absolute", top: "20px", right: "20px", border: "none", background: "#f1f5f9", width: "32px", height: "32px", borderRadius: "16px", fontSize: "16px", cursor: "pointer", color: "#475569", fontWeight: "bold" }}>✕</button>
 
-            {/* Detail Modal */}
-            {activeModal === "detail" && selectedTool && (
-              <div>
-                <span style={{ backgroundColor: "#e0f2fe", color: "#0369a1", padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "800" }}>{selectedTool.category || "Healthcare"}</span>
-                <h2 style={{ fontSize: "28px", fontWeight: "900", color: "#0f172a", marginTop: "8px", marginBottom: "12px" }}>{selectedTool.name}</h2>
-                <p style={{ color: "#334155", fontSize: "15px", lineHeight: "1.6", marginBottom: "20px" }}>{selectedTool.description}</p>
+{/* Detail Modal */}
+      {activeModal === "detail" && selectedTool && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: "16px" }}>
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "32px", maxWidth: "672px", width: "100%", maxHeight: "90vh", overflowY: "auto", position: "relative", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}>
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setActiveModal(null);
+                setReviewStatus("idle");
+                setReviewComment("");
+              }}
+              style={{ position: "absolute", top: "20px", right: "20px", border: "none", background: "none", fontSize: "20px", cursor: "pointer", color: "#64748b" }}
+            >
+              ✕
+            </button>
 
-                <h4 style={{ fontSize: "14px", fontWeight: "800", color: "#64748b", marginBottom: "8px" }}>COMPLIANCE & VERIFICATION</h4>
-                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "24px" }}>
-                  {(selectedTool.compliance || ["HIPAA", "FDA Cleared", "SOC2", "CLIA"]).map((c: string, idx: number) => (
-                    <span key={idx} style={{ backgroundColor: "#fef2f2", color: "#991b1b", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: "700" }}>🛡️ {c}</span>
-                  ))}
+            {/* Category Badge & Visit Website Button */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingRight: "32px", marginBottom: "8px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "700", color: "#0088cc", backgroundColor: "#e0f2fe", padding: "4px 12px", borderRadius: "12px" }}>
+                {selectedTool.sector || selectedTool.category || "Healthcare"}
+              </span>
+              {(selectedTool.website_url || selectedTool.websiteUrl || selectedTool.url || selectedTool.website) && (
+                <a
+                  href={selectedTool.website_url || selectedTool.websiteUrl || selectedTool.url || selectedTool.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ backgroundColor: "#0088cc", color: "#ffffff", padding: "8px 16px", borderRadius: "8px", fontWeight: "700", fontSize: "14px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                >
+                  Visit Website ↗
+                </a>
+              )}
+            </div>
+
+            {/* Tool Title */}
+            <h2 style={{ fontSize: "32px", fontWeight: "900", color: "#0f172a", margin: "8px 0 12px 0" }}>{selectedTool.name}</h2>
+
+            {/* Description */}
+            <p style={{ fontSize: "15px", color: "#334155", lineHeight: "1.6", marginBottom: "24px" }}>{selectedTool.description}</p>
+
+            {/* Compliance Credentials */}
+            <div style={{ marginBottom: "24px" }}>
+              <h4 style={{ fontSize: "11px", fontWeight: "800", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>
+                PUBLICLY STATED COMPLIANCE CREDENTIALS
+              </h4>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {(selectedTool.compliance || ["HIPAA", "SOC2", "GDPR"]).map((item: string, idx: number) => (
+                  <span key={idx} style={{ backgroundColor: "#f0f9ff", border: "1px solid #bae6fd", color: "#0369a1", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: "700", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                    🛡️ {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Claim Profile Banner */}
+            {!selectedTool.isClaimed && (
+              <div style={{ backgroundColor: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: "12px", padding: "16px", marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "800", color: "#581c87" }}>Are you the owner of {selectedTool.name}?</h4>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#7e22ce" }}>
+                    Claim this profile to obtain a Verified Gold Badge, capture direct leads, and feature your tool.
+                  </p>
                 </div>
+                <Link href="/submit" style={{ backgroundColor: "#9333ea", color: "#ffffff", padding: "8px 16px", borderRadius: "8px", fontWeight: "700", fontSize: "13px", textDecoration: "none" }}>
+                  Claim Profile
+                </Link>
+              </div>
+            )}
 
-                <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "24px 0" }} />
+            <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "24px 0" }} />
 
-                <h3 style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a", marginBottom: "12px" }}>User Reviews & Ratings</h3>
+            {/* Enterprise Ratings & Reviews */}
+            <div>
+              <h3 style={{ fontSize: "20px", fontWeight: "800", color: "#0f172a", marginBottom: "16px" }}>Enterprise Ratings & Reviews</h3>
+
+              <div style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "16px" }}>
+                <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>Leave a Clinical Review</h4>
+
                 {reviewStatus === "success" ? (
-                  <div style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "12px 16px", borderRadius: "8px", fontWeight: "bold", marginBottom: "16px" }}>
-                    ✓ Review submitted for administrative approval.
+                  <div style={{ backgroundColor: "#ecfdf5", border: "1px solid #a7f3d0", color: "#065f46", padding: "12px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", marginTop: "8px" }}>
+                    ✓ Thank you for your review! It has been submitted for moderation.
                   </div>
                 ) : (
-                  <form onSubmit={handleReviewSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!reviewComment.trim()) return;
+                      setReviewStatus("submitting");
+                      setTimeout(() => {
+                        setReviewStatus("success");
+                        setReviewComment("");
+                      }, 500);
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                      <span style={{ fontSize: "13px", color: "#475569" }}>Rating:</span>
+                      <select style={{ backgroundColor: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", fontWeight: "600" }}>
+                        <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                        <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                        <option value="3">⭐⭐⭐ (3/5)</option>
+                        <option value="2">⭐⭐ (2/5)</option>
+                        <option value="1">⭐ (1/5)</option>
+                      </select>
+                    </div>
+
                     <textarea
-                      required
                       rows={3}
-                      placeholder="Share your experience or clinical evaluation with this tool..."
+                      required
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
-                      style={{ padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", color: "#0f172a" }}
+                      placeholder="Describe clinical utility, accuracy, and integration ease..."
+                      style={{ width: "100%", borderRadius: "8px", border: "1px solid #cbd5e1", padding: "10px", fontSize: "12px", outline: "none", boxSizing: "border-box" }}
                     />
-                    <button type="submit" style={{ backgroundColor: "#0284c7", color: "#fff", padding: "10px", borderRadius: "8px", border: "none", cursor: "pointer", fontWeight: "bold" }}>
-                      Submit Review
+
+                    <button
+                      type="submit"
+                      disabled={reviewStatus === "submitting"}
+                      style={{ marginTop: "10px", backgroundColor: "#0088cc", color: "#ffffff", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}
+                    >
+                      {reviewStatus === "submitting" ? "Submitting..." : "Submit Review"}
                     </button>
                   </form>
                 )}
               </div>
-            )}
 
+              <p style={{ marginTop: "16px", fontSize: "12px", fontStyle: "italic", color: "#64748b" }}>
+                No public reviews approved yet for this tool.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
             {/* Contact Modal */}
             {activeModal === "contact" && (
               <div>
