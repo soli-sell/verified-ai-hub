@@ -247,7 +247,8 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
         </div>
       </footer>
 
-      {/* Modals */}
+{/* Modals */}
+
       {/* Claim Modal */}
       {activeModal === "claim" && selectedTool && (
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", zIndex: 1000, display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
@@ -275,26 +276,22 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
           </div>
         </div>
       )}
-<div style={{ display: activeModal === "contact" ? "flex" : "none", position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", justifyContent: "center", alignItems: "center", zIndex: 1000, padding: "20px" }}>          <div style={{ backgroundColor: "#ffffff", padding: "32px", borderRadius: "16px", maxWidth: "600px", width: "100%", maxHeight: "90vh", overflowY: "auto", position: "relative", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
-            <button onClick={() => { setActiveModal(null); setContactStatus("idle"); setReviewStatus("idle"); }} style={{ position: "absolute", top: "20px", right: "20px", border: "none", background: "#f1f5f9", width: "32px", height: "32px", borderRadius: "16px", fontSize: "16px", cursor: "pointer", color: "#475569", fontWeight: "bold" }}>✕</button>
 
-{/* Detail Modal */}
+      {/* Detail Modal */}
       {activeModal === "detail" && selectedTool && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: "16px" }}>
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
           <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "32px", maxWidth: "672px", width: "100%", maxHeight: "90vh", overflowY: "auto", position: "relative", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}>
-            {/* Close Button */}
             <button
               onClick={() => {
                 setActiveModal(null);
                 setReviewStatus("idle");
                 setReviewComment("");
               }}
-              style={{ position: "absolute", top: "20px", right: "20px", border: "none", background: "none", fontSize: "20px", cursor: "pointer", color: "#64748b" }}
+              style={{ position: "absolute", top: "20px", right: "20px", border: "none", background: "#f1f5f9", width: "32px", height: "32px", borderRadius: "16px", fontSize: "16px", cursor: "pointer", color: "#475569", fontWeight: "bold" }}
             >
               ✕
             </button>
 
-            {/* Category Badge & Visit Website Button */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingRight: "32px", marginBottom: "8px" }}>
               <span style={{ fontSize: "12px", fontWeight: "700", color: "#0088cc", backgroundColor: "#e0f2fe", padding: "4px 12px", borderRadius: "12px" }}>
                 {selectedTool.sector || selectedTool.category || "Healthcare"}
@@ -311,13 +308,9 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
               )}
             </div>
 
-            {/* Tool Title */}
             <h2 style={{ fontSize: "32px", fontWeight: "900", color: "#0f172a", margin: "8px 0 12px 0" }}>{selectedTool.name}</h2>
-
-            {/* Description */}
             <p style={{ fontSize: "15px", color: "#334155", lineHeight: "1.6", marginBottom: "24px" }}>{selectedTool.description}</p>
 
-            {/* Compliance Credentials */}
             <div style={{ marginBottom: "24px" }}>
               <h4 style={{ fontSize: "11px", fontWeight: "800", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>
                 PUBLICLY STATED COMPLIANCE CREDENTIALS
@@ -331,7 +324,6 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
               </div>
             </div>
 
-            {/* Claim Profile Banner */}
             {!selectedTool.isClaimed && (
               <div style={{ backgroundColor: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: "12px", padding: "16px", marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
                 <div>
@@ -340,17 +332,17 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
                     Claim this profile to obtain a Verified Gold Badge, capture direct leads, and feature your tool.
                   </p>
                 </div>
-<button
-  onClick={() => setActiveModal("claim")}
-  style={{ backgroundColor: "#9333ea", color: "#ffffff", padding: "8px 16px", borderRadius: "8px", fontWeight: "700", fontSize: "13px", border: "none", cursor: "pointer" }}
->
-  Claim Profile
-</button>              </div>
+                <button
+                  onClick={() => setActiveModal("claim")}
+                  style={{ backgroundColor: "#9333ea", color: "#ffffff", padding: "8px 16px", borderRadius: "8px", fontWeight: "700", fontSize: "13px", border: "none", cursor: "pointer" }}
+                >
+                  Claim Profile
+                </button>
+              </div>
             )}
 
             <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "24px 0" }} />
 
-            {/* Enterprise Ratings & Reviews */}
             <div>
               <h3 style={{ fontSize: "20px", fontWeight: "800", color: "#0f172a", marginBottom: "16px" }}>Enterprise Ratings & Reviews</h3>
 
@@ -411,83 +403,114 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
           </div>
         </div>
       )}
-            {/* Contact Modal */}
-            {activeModal === "contact" && (
-              <div>
-                <h2 style={{ fontSize: "24px", fontWeight: "900", color: "#0f172a", marginBottom: "16px" }}>Contact Enterprise Support</h2>
-                {contactStatus === "success" ? (
-                  <div style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "16px", borderRadius: "8px", fontWeight: "bold" }}>
-                    ✓ Message transmitted successfully!
-                  </div>
-                ) : (
-                  <form onSubmit={handleContactSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Your Name"
-                      value={contactData.name}
-                      onChange={(e) => setContactData({ ...contactData, name: e.target.value })}
-                      style={{ padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", color: "#000" }}
-                    />
-                    <input
-                      type="email"
-                      required
-                      placeholder="Your Email"
-                      value={contactData.email}
-                      onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
-                      style={{ padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", color: "#000" }}
-                    />
-                    <textarea
-                      required
-                      rows={4}
-                      placeholder="How can we assist your organization?"
-                      value={contactData.message}
-                      onChange={(e) => setContactData({ ...contactData, message: e.target.value })}
-                      style={{ padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", color: "#000" }}
-                    />
-                    <button
-                      type="submit"
-                      disabled={contactStatus === "submitting"}
-                      style={{ backgroundColor: "#0284c7", color: "#fff", padding: "12px", borderRadius: "8px", border: "none", cursor: "pointer", fontWeight: "bold" }}
-                    >
-                      {contactStatus === "submitting" ? "Sending..." : "Send Message"}
-                    </button>
-                  </form>
-                )}
-              </div>
-            )}
 
-            {/* About Modal */}
-            {activeModal === "about" && (
-              <div>
-                <h2 style={{ fontSize: "24px", fontWeight: "900", color: "#0f172a", marginBottom: "12px" }}>About VerifiedAIHub</h2>
-                <p style={{ color: "#334155", lineHeight: "1.7" }}>
-                  VerifiedAIHub is an enterprise-grade directory built to evaluate, index, and surface artificial intelligence tools across regulated health, life sciences, and compliance-driven industries.
-                </p>
+      {/* Contact Modal */}
+      {activeModal === "contact" && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", zIndex: 1000, display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", maxWidth: "500px", width: "100%", padding: "32px", position: "relative" }}>
+            <button
+              onClick={() => setActiveModal(null)}
+              style={{ position: "absolute", top: "20px", right: "20px", background: "#f1f5f9", border: "none", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontWeight: "bold", fontSize: "16px" }}
+            >
+              ✕
+            </button>
+            <h2 style={{ fontSize: "24px", fontWeight: "900", color: "#0f172a", marginBottom: "16px" }}>Contact Enterprise Support</h2>
+            {contactStatus === "success" ? (
+              <div style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "16px", borderRadius: "8px", fontWeight: "bold" }}>
+                ✓ Message transmitted successfully!
               </div>
-            )}
-
-            {/* Privacy Modal */}
-            {activeModal === "privacy" && (
-              <div>
-                <h2 style={{ fontSize: "24px", fontWeight: "900", color: "#0f172a", marginBottom: "12px" }}>Privacy Policy</h2>
-                <p style={{ color: "#334155", lineHeight: "1.7" }}>
-                  We respect data confidentiality and do not transmit user interactions to third parties without consent.
-                </p>
-              </div>
-            )}
-
-            {/* Terms Modal */}
-            {activeModal === "terms" && (
-              <div>
-                <h2 style={{ fontSize: "24px", fontWeight: "900", color: "#0f172a", marginBottom: "12px" }}>Terms of Service</h2>
-                <p style={{ color: "#334155", lineHeight: "1.7" }}>
-                  VerifiedAIHub provides software information for research and directory reference. Vendor details are subject to independent vendor verification.
-                </p>
-              </div>
+            ) : (
+              <form onSubmit={handleContactSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <input
+                  type="text"
+                  required
+                  placeholder="Your Name"
+                  value={contactData.name}
+                  onChange={(e) => setContactData({ ...contactData, name: e.target.value })}
+                  style={{ padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", color: "#000" }}
+                />
+                <input
+                  type="email"
+                  required
+                  placeholder="Your Email"
+                  value={contactData.email}
+                  onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
+                  style={{ padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", color: "#000" }}
+                />
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="How can we assist your organization?"
+                  value={contactData.message}
+                  onChange={(e) => setContactData({ ...contactData, message: e.target.value })}
+                  style={{ padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", color: "#000" }}
+                />
+                <button
+                  type="submit"
+                  disabled={contactStatus === "submitting"}
+                  style={{ backgroundColor: "#0284c7", color: "#fff", padding: "12px", borderRadius: "8px", border: "none", cursor: "pointer", fontWeight: "bold" }}
+                >
+                  {contactStatus === "submitting" ? "Sending..." : "Send Message"}
+                </button>
+              </form>
             )}
           </div>
         </div>
+      )}
+
+      {/* About Modal */}
+      {activeModal === "about" && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", zIndex: 1000, display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", maxWidth: "500px", width: "100%", padding: "32px", position: "relative" }}>
+            <button
+              onClick={() => setActiveModal(null)}
+              style={{ position: "absolute", top: "20px", right: "20px", background: "#f1f5f9", border: "none", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontWeight: "bold", fontSize: "16px" }}
+            >
+              ✕
+            </button>
+            <h2 style={{ fontSize: "24px", fontWeight: "900", color: "#0f172a", marginBottom: "12px" }}>About VerifiedAIHub</h2>
+            <p style={{ color: "#334155", lineHeight: "1.7" }}>
+              VerifiedAIHub is an enterprise-grade directory built to evaluate, index, and surface artificial intelligence tools across regulated health, life sciences, and compliance-driven industries.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Modal */}
+      {activeModal === "privacy" && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", zIndex: 1000, display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", maxWidth: "500px", width: "100%", padding: "32px", position: "relative" }}>
+            <button
+              onClick={() => setActiveModal(null)}
+              style={{ position: "absolute", top: "20px", right: "20px", background: "#f1f5f9", border: "none", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontWeight: "bold", fontSize: "16px" }}
+            >
+              ✕
+            </button>
+            <h2 style={{ fontSize: "24px", fontWeight: "900", color: "#0f172a", marginBottom: "12px" }}>Privacy Policy</h2>
+            <p style={{ color: "#334155", lineHeight: "1.7" }}>
+              We respect data confidentiality and do not transmit user interactions to third parties without consent.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Terms Modal */}
+      {activeModal === "terms" && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", zIndex: 1000, display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", maxWidth: "500px", width: "100%", padding: "32px", position: "relative" }}>
+            <button
+              onClick={() => setActiveModal(null)}
+              style={{ position: "absolute", top: "20px", right: "20px", background: "#f1f5f9", border: "none", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontWeight: "bold", fontSize: "16px" }}
+            >
+              ✕
+            </button>
+            <h2 style={{ fontSize: "24px", fontWeight: "900", color: "#0f172a", marginBottom: "12px" }}>Terms of Service</h2>
+            <p style={{ color: "#334155", lineHeight: "1.7" }}>
+              VerifiedAIHub provides software information for research and directory reference. Vendor details are subject to independent vendor verification.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
