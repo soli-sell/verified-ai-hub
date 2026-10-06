@@ -379,18 +379,30 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
                     ✓ Thank you for your review! It has been submitted for moderation.
                   </div>
                 ) : (
-                  <form
-                    onSubmit={(e) => {
+<form
+                    onSubmit={async (e) => {
                       e.preventDefault();
                       if (!reviewComment.trim()) return;
                       setReviewStatus("submitting");
-                      setTimeout(() => {
+
+                      try {
+                        await fetch("/api/notify-submission", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            toolName: selectedTool.name,
+                            comment: reviewComment,
+                            type: "Clinical Review",
+                          }),
+                        });
                         setReviewStatus("success");
                         setReviewComment("");
-                      }, 500);
+                      } catch (err) {
+                        setReviewStatus("idle");
+                        alert("Could not submit review. Please try again.");
+                      }
                     }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                  >                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
                       <span style={{ fontSize: "13px", color: "#475569" }}>Rating:</span>
                       <select style={{ backgroundColor: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", fontWeight: "600" }}>
                         <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
