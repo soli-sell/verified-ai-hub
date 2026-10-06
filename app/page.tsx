@@ -250,7 +250,33 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
       </footer>
 
       {/* Modals */}
-      {activeModal && (
+      {/* Claim Modal */}
+      {activeModal === "claim" && selectedTool && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", zIndex: 1000, display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", maxWidth: "500px", width: "100%", padding: "32px", position: "relative", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)" }}>
+            <button
+              onClick={() => setActiveModal(null)}
+              style={{ position: "absolute", top: "20px", right: "20px", background: "#f1f5f9", border: "none", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontWeight: "bold", fontSize: "16px", color: "#64748b" }}
+            >
+              ✕
+            </button>
+            <h3 style={{ marginTop: 0, fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>
+              Claim {selectedTool.name}
+            </h3>
+            <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "20px" }}>
+              Verify ownership to claim this profile and receive a Verified Gold Badge.
+            </p>
+            <form onSubmit={(e) => { e.preventDefault(); alert("Claim request submitted!"); setActiveModal(null); }} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <input type="text" placeholder="Your Full Name" required style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
+              <input type="email" placeholder="Work Email Address" required style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
+              <input type="text" placeholder="Proof Link (LinkedIn Profile or Site)" required style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
+              <button type="submit" style={{ backgroundColor: "#0284c7", color: "#ffffff", padding: "12px", borderRadius: "8px", fontWeight: "700", border: "none", cursor: "pointer", marginTop: "8px" }}>
+                Submit Claim Request
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, padding: "20px" }}>
           <div style={{ backgroundColor: "#ffffff", padding: "32px", borderRadius: "16px", maxWidth: "600px", width: "100%", maxHeight: "90vh", overflowY: "auto", position: "relative", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
             <button onClick={() => { setActiveModal(null); setContactStatus("idle"); setReviewStatus("idle"); }} style={{ position: "absolute", top: "20px", right: "20px", border: "none", background: "#f1f5f9", width: "32px", height: "32px", borderRadius: "16px", fontSize: "16px", cursor: "pointer", color: "#475569", fontWeight: "bold" }}>✕</button>
@@ -317,10 +343,12 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
                     Claim this profile to obtain a Verified Gold Badge, capture direct leads, and feature your tool.
                   </p>
                 </div>
-                <Link href="/submit" style={{ backgroundColor: "#9333ea", color: "#ffffff", padding: "8px 16px", borderRadius: "8px", fontWeight: "700", fontSize: "13px", textDecoration: "none" }}>
-                  Claim Profile
-                </Link>
-              </div>
+<button
+  onClick={() => setActiveModal("claim")}
+  style={{ backgroundColor: "#9333ea", color: "#ffffff", padding: "8px 16px", borderRadius: "8px", fontWeight: "700", fontSize: "13px", border: "none", cursor: "pointer" }}
+>
+  Claim Profile
+</button>              </div>
             )}
 
             <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "24px 0" }} />
@@ -463,7 +491,6 @@ const categories = ["All", "Healthcare", "Life Sciences", "Diagnostics", "Biotec
             )}
           </div>
         </div>
-      )}
     </div>
   );
 }
