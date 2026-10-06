@@ -9,10 +9,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedCompliance, setSelectedCompliance] = useState("All Standards");
-  const [selectedTool, setSelectedTool] = useState<any | null>(null);
-  const [activeModal, setActiveModal] = useState<"detail" | "submit" | "contact" | "claim" | "about" | "privacy" | "terms" | null>(null);
-
-// Form State
+const [selectedTool, setSelectedTool] = useState<any | null>(null);
+const [activeModal, setActiveModal] = useState<string | null>(null);// Form State
   const [reviewComment, setReviewComment] = useState("");
   const [reviewStatus, setReviewStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [contactData, setContactData] = useState({ name: "", email: "", message: "" });
