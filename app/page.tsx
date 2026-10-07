@@ -25,14 +25,27 @@ export default function Home() {
     fetchTools();
   }, []);
 
-  const fetchTools = async () => {
-    const { data } = await supabase
+const fetchTools = async () => {
+    const { data: toolsData } = await supabase
       .from("tools")
-      .select("*")
+      .select("*, reviews(rating)")
       .eq("status", "approved");
-    if (data) setTools(data);
-  };
 
+    if (toolsData) {
+      const toolsWithRatings = toolsData.map((tool: any) => {
+        const reviews = tool.reviews || [];
+        const avgRating =
+          reviews.length > 0
+            ? (
+                reviews.reduce((acc: number, r: any) => acc + (Number(r.rating) || 5), 0) /
+                reviews.length
+              ).toFixed(1)
+            : null;
+        return { ...tool, avgRating, reviewCount: reviews.length };
+      });
+      setTools(toolsWithRatings);
+    }
+  };
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setContactStatus("submitting");
@@ -177,11 +190,10 @@ export default function Home() {
                   <span style={{ backgroundColor: "#e0f2fe", color: "#0369a1", padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "800" }}>
                     {tool.category || "Healthcare"}
                   </span>
-                  <span style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "700" }}>
-                    Directory Listing
-                  </span>
-                </div>
-
+<span style={{ backgroundColor: "#fef3c7", color: "#92400e", padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "700", display: "flex", alignItems: "center", gap: "4px" }}>
+                    ⭐ {tool.avgRating ? `${tool.avgRating} (${tool.reviewCount})` : "5.0 (New)"}
+                  </span>                
+                  </div>
                 <h3 style={{ fontSize: "22px", fontWeight: "900", color: "#0f172a", marginBottom: "10px" }}>{tool.name}</h3>
                 <p style={{ color: "#475569", fontSize: "14px", lineHeight: "1.5", marginBottom: "18px" }}>{tool.description}</p>
 
