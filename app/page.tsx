@@ -207,7 +207,7 @@ const fetchTools = async () => {
                     {tool.category || "Healthcare"}
                   </span>
 <span style={{ backgroundColor: "#fef3c7", color: "#92400e", padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "700", display: "flex", alignItems: "center", gap: "4px" }}>
-                    ⭐ {tool.avgRating ? `${tool.avgRating} (${tool.reviewCount})` : "5.0 (New)"}
+⭐ {tool.avgRating ? `${tool.avgRating} (${tool.reviewCount})` : "New"}
                   </span>                
                   </div>
                 <h3 style={{ fontSize: "22px", fontWeight: "900", color: "#0f172a", marginBottom: "10px" }}>{tool.name}</h3>
