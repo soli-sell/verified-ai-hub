@@ -26,24 +26,40 @@ export default function Home() {
   }, []);
 
 const fetchTools = async () => {
-    const { data: toolsData } = await supabase
-      .from("tools")
-      .select("*, reviews(rating)")
-      .eq("status", "approved");
+    try {
+      // 1. Fetch approved tools
+      const { data: toolsData, error: toolsError } = await supabase
+        .from("tools")
+        .select("*")
+        .eq("status", "approved");
 
-    if (toolsData) {
+      if (toolsError || !toolsData) {
+        console.error("Error fetching tools:", toolsError);
+        return;
+      }
+
+      // 2. Fetch reviews separately so schema joins never break the page
+      const { data: reviewsData } = await supabase
+        .from("reviews")
+        .select("tool_id, rating");
+
       const toolsWithRatings = toolsData.map((tool: any) => {
-        const reviews = tool.reviews || [];
+        const toolReviews = (reviewsData || []).filter(
+          (r: any) => String(r.tool_id) === String(tool.id)
+        );
         const avgRating =
-          reviews.length > 0
+          toolReviews.length > 0
             ? (
-                reviews.reduce((acc: number, r: any) => acc + (Number(r.rating) || 5), 0) /
-                reviews.length
+                toolReviews.reduce((acc: number, r: any) => acc + (Number(r.rating) || 5), 0) /
+                toolReviews.length
               ).toFixed(1)
             : null;
-        return { ...tool, avgRating, reviewCount: reviews.length };
+        return { ...tool, avgRating, reviewCount: toolReviews.length };
       });
+
       setTools(toolsWithRatings);
+    } catch (err) {
+      console.error("Unexpected error fetching tools:", err);
     }
   };
   const handleContactSubmit = async (e: React.FormEvent) => {
